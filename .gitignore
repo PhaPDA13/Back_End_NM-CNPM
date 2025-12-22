@@ -64,3 +64,4 @@ coverage/
 
 #prisma
 /src/generated/prisma
+/generated/prisma
