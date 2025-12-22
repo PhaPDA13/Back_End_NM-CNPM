@@ -1,3 +1,67 @@
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
 .env
-node_modules
-package-lock.json
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Build output
+dist/
+build/
+.out/
+.next/
+.nuxt/
+*.tsbuildinfo
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+.eslintcache
+
+# Parcel-bundler cache
+.cache
+
+# Coverage directory used by testing tools
+coverage/
+*.lcov
+
+# Optional REPL history
+.node_repl_history
+
+# MacOS
+*.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+
+#prisma
+/src/generated/prisma
+/generated/prisma
