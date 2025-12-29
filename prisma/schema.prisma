@@ -15,6 +15,8 @@ model chi_tiet_phieu_xuat_hang {
   so_luong           Int
   don_gia            Decimal         @db.Decimal(15, 2)
   thanh_tien         Decimal?        @db.Decimal(15, 2)
+  created_at         DateTime        @default(now())
+  updated_at         DateTime        @default(now()) @updatedAt
   don_vi_tinh        don_vi_tinh     @relation(fields: [ma_don_vi_tinh], references: [ma_don_vi_tinh], onDelete: NoAction, onUpdate: NoAction)
   mat_hang           mat_hang        @relation(fields: [ma_mat_hang], references: [ma_mat_hang], onDelete: NoAction, onUpdate: NoAction)
   phieu_xuat_hang    phieu_xuat_hang @relation(fields: [ma_phieu_xuat_hang], references: [ma_phieu_xuat_hang], onDelete: NoAction, onUpdate: NoAction)
@@ -37,6 +39,8 @@ model ho_so_dai_ly {
   tien_no         Decimal?          @default(0) @db.Decimal(15, 2)
   ma_quan         Int
   ma_loai         Int
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @default(now()) @updatedAt
   loai_dai_ly     loai_dai_ly       @relation(fields: [ma_loai], references: [ma_loai], onDelete: NoAction, onUpdate: NoAction)
   quan            quan              @relation(fields: [ma_quan], references: [ma_quan], onDelete: NoAction, onUpdate: NoAction)
   phieu_thu_tien  phieu_thu_tien[]
@@ -67,6 +71,7 @@ model nhan_vien {
   vai_tro         String?           @default("KeToan") @db.VarChar(20)
   phieu_thu_tien  phieu_thu_tien[]
   phieu_xuat_hang phieu_xuat_hang[]
+  refresh_tokens  refresh_token[]
 }
 
 model phieu_thu_tien {
@@ -75,6 +80,8 @@ model phieu_thu_tien {
   so_tien_thu  Decimal      @db.Decimal(15, 2)
   ma_dai_ly    Int
   ma_nhan_vien Int
+  created_at   DateTime     @default(now())
+  updated_at   DateTime     @default(now()) @updatedAt
   ho_so_dai_ly ho_so_dai_ly @relation(fields: [ma_dai_ly], references: [ma_dai_ly], onDelete: NoAction, onUpdate: NoAction)
   nhan_vien    nhan_vien    @relation(fields: [ma_nhan_vien], references: [ma_nhan_vien], onDelete: NoAction, onUpdate: NoAction)
 }
@@ -85,6 +92,8 @@ model phieu_xuat_hang {
   ma_dai_ly                 Int
   tong_tien_phieu_xuat_hang Decimal?                   @default(0) @db.Decimal(15, 2)
   ma_nhan_vien              Int
+  created_at                DateTime                   @default(now())
+  updated_at                DateTime                   @default(now()) @updatedAt
   chi_tiet_phieu_xuat_hang  chi_tiet_phieu_xuat_hang[]
   ho_so_dai_ly              ho_so_dai_ly               @relation(fields: [ma_dai_ly], references: [ma_dai_ly], onDelete: NoAction, onUpdate: NoAction)
   nhan_vien                 nhan_vien                  @relation(fields: [ma_nhan_vien], references: [ma_nhan_vien], onDelete: NoAction, onUpdate: NoAction)
@@ -95,4 +104,16 @@ model quan {
   ten_quan         String         @unique @db.VarChar(45)
   so_dai_ly_toi_da Int            @default(4)
   ho_so_dai_ly     ho_so_dai_ly[]
+}
+
+model refresh_token {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  token        String   @unique
+  expires_at   DateTime
+  is_revoked   Boolean  @default(false)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @default(now()) @updatedAt
+
+  user         nhan_vien @relation(fields: [user_id], references: [ma_nhan_vien], onDelete: Cascade)
 }
