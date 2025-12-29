@@ -1,4 +1,4 @@
-import { AgencyService } from "../services/agency.services.js";
+import { AgencyService } from "../services/agency.service.js";
 
 export const getAllAgencies = async (req, res) => {
 	try {
@@ -14,11 +14,6 @@ export const getAllAgencies = async (req, res) => {
 			data: agencies,
 		});
 	} catch (err) {
-		console.log(err);
-		res.status(500).json({
-			success: false,
-			message: err.message,
-		});
-		throw err;
+		next(err);
 	}
 };
