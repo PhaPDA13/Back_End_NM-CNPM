@@ -7,113 +7,125 @@ datasource db {
   provider = "postgresql"
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model chi_tiet_phieu_xuat_hang {
-  ma_phieu_xuat_hang Int
-  ma_mat_hang        Int
-  ma_don_vi_tinh     Int
-  so_luong           Int
-  don_gia            Decimal         @db.Decimal(15, 2)
-  thanh_tien         Decimal?        @db.Decimal(15, 2)
-  created_at         DateTime        @default(now())
-  updated_at         DateTime        @default(now()) @updatedAt
-  don_vi_tinh        don_vi_tinh     @relation(fields: [ma_don_vi_tinh], references: [ma_don_vi_tinh], onDelete: NoAction, onUpdate: NoAction)
-  mat_hang           mat_hang        @relation(fields: [ma_mat_hang], references: [ma_mat_hang], onDelete: NoAction, onUpdate: NoAction)
-  phieu_xuat_hang    phieu_xuat_hang @relation(fields: [ma_phieu_xuat_hang], references: [ma_phieu_xuat_hang], onDelete: NoAction, onUpdate: NoAction)
+model User {
+  id        Int      @id @default(autoincrement())
+  fullName  String   @db.VarChar(100)
+  email     String   @unique @db.VarChar(100)
+  username  String   @unique @db.VarChar(100)
+  password  String   @db.VarChar(255)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@id([ma_phieu_xuat_hang, ma_mat_hang, ma_don_vi_tinh])
+  agents        Agent[]
+  receipts      Receipt[]
+  exportNotes   ExportNote[]
+  refreshTokens RefreshToken[]
 }
 
-model don_vi_tinh {
-  ma_don_vi_tinh           Int                        @id @default(autoincrement())
-  ten_don_vi_tinh          String                     @unique @db.VarChar(45)
-  chi_tiet_phieu_xuat_hang chi_tiet_phieu_xuat_hang[]
+model Agent {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(45)
+  phone       String   @db.VarChar(15)
+  address     String   @db.VarChar(100)
+  email       String   @unique @db.VarChar(45)
+  debtAmount  Decimal  @default(0) @db.Decimal(15,2)
+  districtId  Int
+  agentTypeId Int
+  ownerId     Int
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner     User      @relation(fields: [ownerId], references: [id])
+  agentType AgentType @relation(fields: [agentTypeId], references: [id])
+  district  District  @relation(fields: [districtId], references: [id])
+
+  receipts    Receipt[]
+  exportNotes ExportNote[]
 }
 
-model ho_so_dai_ly {
-  ma_dai_ly       Int               @id @default(autoincrement())
-  ten_dai_ly      String            @db.VarChar(45)
-  dien_thoai      String            @db.VarChar(15)
-  dia_chi         String            @db.VarChar(100)
-  email           String            @unique @db.VarChar(45)
-  tien_no         Decimal?          @default(0) @db.Decimal(15, 2)
-  ma_quan         Int
-  ma_loai         Int
-  created_at      DateTime          @default(now())
-  updated_at      DateTime          @default(now()) @updatedAt
-  loai_dai_ly     loai_dai_ly       @relation(fields: [ma_loai], references: [ma_loai], onDelete: NoAction, onUpdate: NoAction)
-  quan            quan              @relation(fields: [ma_quan], references: [ma_quan], onDelete: NoAction, onUpdate: NoAction)
-  phieu_thu_tien  phieu_thu_tien[]
-  phieu_xuat_hang phieu_xuat_hang[]
+model ExportNote {
+  id        Int      @id @default(autoincrement())
+  issueDate DateTime @db.Date
+  agentId   Int
+  ownerId   Int
+  total     Decimal  @default(0) @db.Decimal(15,2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agent Agent @relation(fields: [agentId], references: [id])
+  owner User  @relation(fields: [ownerId], references: [id])
+
+  details ExportNoteDetail[]
 }
 
-model loai_dai_ly {
-  ma_loai        Int            @id @default(autoincrement())
-  ten_loai       String         @unique @db.VarChar(45)
-  tien_no_toi_da Decimal        @db.Decimal(15, 2)
-  ho_so_dai_ly   ho_so_dai_ly[]
+model ExportNoteDetail {
+  exportNoteId Int
+  productId    Int
+  unitId       Int
+  quantity     Int
+  price        Decimal  @db.Decimal(15,2)
+  amount       Decimal? @db.Decimal(15,2)
+
+  exportNote ExportNote @relation(fields: [exportNoteId], references: [id])
+  product    Product    @relation(fields: [productId], references: [id])
+  unit       Unit       @relation(fields: [unitId], references: [id])
+
+  @@id([exportNoteId, productId, unitId])
 }
 
-model mat_hang {
-  ma_mat_hang              Int                        @id @default(autoincrement())
-  ten_mat_hang             String                     @unique @db.VarChar(45)
-  don_gia                  Decimal                    @db.Decimal(15, 2)
-  chi_tiet_phieu_xuat_hang chi_tiet_phieu_xuat_hang[]
+model Receipt {
+  id        Int      @id @default(autoincrement())
+  payDate   DateTime @db.Date
+  amount    Decimal  @db.Decimal(15,2)
+  agentId   Int
+  ownerId   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agent Agent @relation(fields: [agentId], references: [id])
+  owner User  @relation(fields: [ownerId], references: [id])
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model nhan_vien {
-  ma_nhan_vien    Int               @id @default(autoincrement())
-  ten_nhan_vien   String            @db.VarChar(100)
-  email           String            @unique @db.VarChar(100)
-  username        String            @unique @db.VarChar(100)
-  mat_khau        String            @db.VarChar(255)
-  vai_tro         String?           @default("KeToan") @db.VarChar(20)
-  phieu_thu_tien  phieu_thu_tien[]
-  phieu_xuat_hang phieu_xuat_hang[]
-  refresh_tokens  refresh_token[]
+model AgentType {
+  id      Int     @id @default(autoincrement())
+  name    String  @unique
+  maxDebt Decimal @db.Decimal(15,2)
+
+  agents Agent[]
 }
 
-model phieu_thu_tien {
-  ma_phieu_thu Int          @id @default(autoincrement())
-  ngay_thu     DateTime     @default(dbgenerated("CURRENT_DATE")) @db.Date
-  so_tien_thu  Decimal      @db.Decimal(15, 2)
-  ma_dai_ly    Int
-  ma_nhan_vien Int
-  created_at   DateTime     @default(now())
-  updated_at   DateTime     @default(now()) @updatedAt
-  ho_so_dai_ly ho_so_dai_ly @relation(fields: [ma_dai_ly], references: [ma_dai_ly], onDelete: NoAction, onUpdate: NoAction)
-  nhan_vien    nhan_vien    @relation(fields: [ma_nhan_vien], references: [ma_nhan_vien], onDelete: NoAction, onUpdate: NoAction)
+model Product {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  price Decimal @db.Decimal(15,2)
+
+  details ExportNoteDetail[]
 }
 
-model phieu_xuat_hang {
-  ma_phieu_xuat_hang        Int                        @id @default(autoincrement())
-  ngay_lap_phieu            DateTime                   @default(dbgenerated("CURRENT_DATE")) @db.Date
-  ma_dai_ly                 Int
-  tong_tien_phieu_xuat_hang Decimal?                   @default(0) @db.Decimal(15, 2)
-  ma_nhan_vien              Int
-  created_at                DateTime                   @default(now())
-  updated_at                DateTime                   @default(now()) @updatedAt
-  chi_tiet_phieu_xuat_hang  chi_tiet_phieu_xuat_hang[]
-  ho_so_dai_ly              ho_so_dai_ly               @relation(fields: [ma_dai_ly], references: [ma_dai_ly], onDelete: NoAction, onUpdate: NoAction)
-  nhan_vien                 nhan_vien                  @relation(fields: [ma_nhan_vien], references: [ma_nhan_vien], onDelete: NoAction, onUpdate: NoAction)
+model Unit {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  details ExportNoteDetail[]
 }
 
-model quan {
-  ma_quan          Int            @id @default(autoincrement())
-  ten_quan         String         @unique @db.VarChar(45)
-  so_dai_ly_toi_da Int            @default(4)
-  ho_so_dai_ly     ho_so_dai_ly[]
+model District {
+  id        Int    @id @default(autoincrement())
+  name      String @unique
+  maxAgents Int    @default(4)
+
+  agents Agent[]
 }
 
-model refresh_token {
-  id           Int      @id @default(autoincrement())
-  user_id      Int
-  token        String   @unique
-  expires_at   DateTime
-  is_revoked   Boolean  @default(false)
-  created_at   DateTime @default(now())
-  updated_at   DateTime @default(now()) @updatedAt
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user         nhan_vien @relation(fields: [user_id], references: [ma_nhan_vien], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

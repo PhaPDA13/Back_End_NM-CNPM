@@ -4,34 +4,34 @@ Backend API cho hệ thống quản lý đại lý, xây dựng bằng Node.js, 
 
 ## 📋 Mục lục
 
--   [Giới thiệu](#giới-thiệu)
--   [Công nghệ sử dụng](#công-nghệ-sử-dụng)
--   [Cấu trúc dự án](#cấu-trúc-dự-án)
--   [Yêu cầu hệ thống](#yêu-cầu-hệ-thống)
--   [Cài đặt](#cài-đặt)
--   [Cấu hình](#cấu-hình)
--   [Chạy ứng dụng](#chạy-ứng-dụng)
--   [API Documentation](#api-documentation)
--   [Nhóm phát triển](#nhóm-phát-triển)
+- [Giới thiệu](#giới-thiệu)
+- [Công nghệ sử dụng](#công-nghệ-sử-dụng)
+- [Cấu trúc dự án](#cấu-trúc-dự-án)
+- [Yêu cầu hệ thống](#yêu-cầu-hệ-thống)
+- [Cài đặt](#cài-đặt)
+- [Cấu hình](#cấu-hình)
+- [Chạy ứng dụng](#chạy-ứng-dụng)
+- [API Documentation](#api-documentation)
+- [Nhóm phát triển](#nhóm-phát-triển)
 
 ## 🎯 Giới thiệu
 
 Hệ thống Backend cung cấp các API RESTful để quản lý đại lý, bao gồm các chức năng:
 
--   Quản lý thông tin đại lý
--   Xác thực và phân quyền người dùng
--   Quản lý giao dịch và báo cáo
--   Tích hợp với cơ sở dữ liệu PostgreSQL
+- Quản lý thông tin đại lý
+- Xác thực và phân quyền người dùng
+- Quản lý giao dịch và báo cáo
+- Tích hợp với cơ sở dữ liệu PostgreSQL
 
 ## 🛠 Công nghệ sử dụng
 
--   **Runtime**: Node.js
--   **Framework**: Express.js v5.2.1
--   **Database**: PostgreSQL
--   **Authentication**: bcrypt v6.0.0
--   **Environment Variables**: dotenv v17.2.3
--   **CORS**: cors v2.8.5
--   **Database Driver**: pg v8.16.3
+- **Runtime**: Node.js
+- **Framework**: Express.js v5.2.1
+- **Database**: PostgreSQL
+- **Authentication**: bcrypt v6.0.0
+- **Environment Variables**: dotenv v17.2.3
+- **CORS**: cors v2.8.5
+- **Database Driver**: pg v8.16.3
 
 ## 📁 Cấu trúc dự án
 
@@ -64,9 +64,9 @@ Backend_CNPM/
 
 ## 💻 Yêu cầu hệ thống
 
--   Node.js >= 18.0.0
--   PostgreSQL >= 14.0
--   npm hoặc yarn
+- Node.js >= 18.0.0
+- PostgreSQL >= 14.0
+- npm hoặc yarn
 
 ## 🚀 Cài đặt
 
@@ -113,14 +113,14 @@ CORS_ORIGIN=http://localhost:5173
 
 Mặc định, CORS được cấu hình cho phép request từ:
 
--   `http://localhost:5173` (Vite dev server)
+- `http://localhost:5173` (Vite dev server)
 
 Để thêm origin khác, chỉnh sửa file [src/config/cors.js](src/config/cors.js):
 
 ```javascript
 const whitelist = [
-	"http://localhost:5173",
-	"http://localhost:3001", // Thêm origin mới
+  "http://localhost:5173",
+  "http://localhost:3001", // Thêm origin mới
 ];
 ```
 
@@ -166,9 +166,9 @@ Successful Response:
 
 ```json
 {
-	"success": true,
-	"data": {},
-	"message": "Success message"
+  "success": true,
+  "data": {},
+  "message": "Success message"
 }
 ```
 
@@ -176,9 +176,9 @@ Error Response:
 
 ```json
 {
-	"success": false,
-	"error": "Error message",
-	"details": {}
+  "success": false,
+  "error": "Error message",
+  "details": {}
 }
 ```
 
@@ -194,10 +194,10 @@ Hướng dẫn chạy migration sẽ được cập nhật.
 
 ## 🔒 Security
 
--   Passwords được mã hóa bằng bcrypt
--   CORS được cấu hình với whitelist
--   Environment variables được quản lý qua dotenv
--   SSL/TLS được bật cho PostgreSQL connection
+- Passwords được mã hóa bằng bcrypt
+- CORS được cấu hình với whitelist
+- Environment variables được quản lý qua dotenv
+- SSL/TLS được bật cho PostgreSQL connection
 
 ## 🧪 Testing
 
@@ -211,10 +211,10 @@ _Lưu ý: Test suite đang được phát triển_
 
 Project sử dụng ES6+ modules với cú pháp:
 
--   `import/export` thay vì `require/module.exports`
--   Arrow functions
--   Async/await
--   Destructuring
+- `import/export` thay vì `require/module.exports`
+- Arrow functions
+- Async/await
+- Destructuring
 
 ## 🤝 Contributing
 
@@ -228,7 +228,7 @@ Project sử dụng ES6+ modules với cú pháp:
 
 **Group 04** - HCMUS
 
--   GitHub: [hcmus-phat](https://github.com/hcmus-phat)
+- GitHub: [hcmus-phat](https://github.com/hcmus-phat)
 
 ## 📄 License
 
