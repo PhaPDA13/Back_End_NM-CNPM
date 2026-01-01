@@ -1,5 +1,5 @@
 const whitelist = [
-  "http://localhost:5173",   // Vite
+  "http://localhost:5173", // Vite
 ];
 
 export const corsOptions = {
@@ -11,7 +11,7 @@ export const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true,     // Allow cookie / auth header
+  credentials: true, // Allow cookie / auth header
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };

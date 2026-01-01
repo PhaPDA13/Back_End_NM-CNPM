@@ -7,115 +7,110 @@ import ApiError from "../utils/ApiError.js";
 dotenv.config();
 
 export class AuthService {
-	static async create(data) {
-		const existingUserName = await prisma.nhan_vien.findUnique({
-			where: { username: data.username },
-		});
+  static async create(data) {
+    const existingUserName = await prisma().user.findUnique({
+      where: { username: data.username },
+    });
 
-		const existingEmail = await prisma.nhan_vien.findUnique({
-			where: { email: data.email },
-		});
+    const existingEmail = await prisma().user.findUnique({
+      where: { email: data.email },
+    });
 
-		if (existingUserName || existingEmail) {
-			throw new ApiError(400, "Username or email already exist");
-		}
+    if (existingUserName || existingEmail) {
+      throw new ApiError(400, "Username or email already exist");
+    }
 
-		const hashRounds = 10;
-		const hashedPassword = await bcrypt.hash(data.mat_khau, hashRounds);
+    const hashRounds = 10;
+    const hashedPassword = await bcrypt.hash(data.password, hashRounds);
 
-		return await prisma.nhan_vien.create({
-			data: {
-				ten_nhan_vien: data.ten_nhan_vien,
-				email: data.email,
-				username: data.username,
-				mat_khau: hashedPassword,
-			},
-		});
-	}
+    return await prisma().user.create({
+      data: {
+        fullName: data.fullName,
+        email: data.email,
+        username: data.username,
+        password: hashedPassword,
+      },
+    });
+  }
 
-	static async auth(data) {
-		const { username, password } = data;
+  static async auth(data) {
+    const { username, password } = data;
 
-		const foundUser = await prisma.nhan_vien.findUnique({
-			where: {
-				username: username,
-			},
-		});
+    const foundUser = await prisma().user.findUnique({
+      where: {
+        username: username,
+      },
+    });
 
-		if (!foundUser) {
-			throw new ApiError(404, "Incorrect username or password");
-		}
+    if (!foundUser) {
+      throw new ApiError(404, "Incorrect username or password");
+    }
 
-		const match = await bcrypt.compare(password, foundUser.mat_khau);
-		if (!match) {
-			throw new ApiError(400, "Incorrect username or password");
-		}
+    const match = await bcrypt.compare(password, foundUser.password);
+    if (!match) {
+      throw new ApiError(400, "Incorrect username or password");
+    }
 
-		const accessToken = jwt.sign(
-			{
-				id: foundUser.ma_nhan_vien,
-			},
-			process.env.ACCESS_TOKEN_SECRET,
-			{ expiresIn: "30m" }
-		);
+    const accessToken = jwt.sign(
+      {
+        id: foundUser.id,
+      },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: "30m" }
+    );
 
-		const refreshToken = jwt.sign(
-			{
-				id: foundUser.ma_nhan_vien,
-			},
-			process.env.REFRESH_TOKEN_SECRET,
-			{ expiresIn: "1d" }
-		);
+    const refreshToken = jwt.sign(
+      {
+        id: foundUser.id,
+      },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "1d" }
+    );
 
-		const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-		await prisma.refresh_token.create({
-			data: {
-				user_id: foundUser.ma_nhan_vien,
-				token: refreshToken,
-				expires_at: expiresAt,
-			},
-		});
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await prisma().refreshToken.create({
+      data: {
+        userId: foundUser.id,
+        token: refreshToken,
+        expiresAt: expiresAt,
+      },
+    });
 
-		return { accessToken, refreshToken };
-	}
+    return { accessToken, refreshToken };
+  }
 
-	static async refresh(refreshToken) {
-		const payload = jwt.verify(
-			refreshToken,
-			process.env.REFRESH_TOKEN_SECRET
-		);
+  static async refresh(refreshToken) {
+    const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
-		const tokenInDb = await prisma.refresh_token.findFirst({
-			where: {
-				token: refreshToken,
-				is_revoked: false,
-				expires_at: { gt: new Date() },
-			},
-		});
+    const tokenInDb = await prisma().refreshToken.findFirst({
+      where: {
+        token: refreshToken,
+        isRevoked: false,
+        expiresAt: { gt: new Date() },
+      },
+    });
 
-		if (!tokenInDb) {
-			throw new ApiError(400, "Token not found");
-		}
+    if (!tokenInDb) {
+      throw new ApiError(400, "Token not found");
+    }
 
-		const newAccessToken = jwt.sign(
-			{ id: payload.id },
-			process.env.ACCESS_TOKEN_SECRET,
-			{ expiresIn: "30m" }
-		);
+    const newAccessToken = jwt.sign({ id: payload.id }, process.env.ACCESS_TOKEN_SECRET, {
+      expiresIn: "30m",
+    });
 
-		return newAccessToken;
-	}
+    return newAccessToken;
+  }
 
-	static async logout(refreshToken) {
-		if (!refreshToken) {
-			throw new ApiError(400, "Refresh token is required");
-		}
+  static async logout(refreshToken) {
+    if (!refreshToken) {
+      throw new ApiError(400, "Refresh token is required");
+    }
 
-		// Xóa refresh token khỏi DB
-		await prisma.refresh_token.deleteMany({
-			where: { token: refreshToken },
-		});
+    // Xóa refresh token khỏi DB
+    await prisma().refreshToken.deleteMany({
+      where: { token: refreshToken },
+    });
 
-		return true;
-	}
+    return true;
+  }
 }
