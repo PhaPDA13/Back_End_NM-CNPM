@@ -80,7 +80,69 @@ export class AgentService {
     return agents;
   }
 
-  static async;
+  static async search(query, ownerId) {
+    const db = prisma(ownerId);
+    const where = {
+      AND: [],
+    };
+
+    // Tìm theo tên
+    if (query.name) {
+      where.AND.push({
+        name: {
+          contains: query.name,
+          mode: "insensitive",
+        },
+      });
+    }
+
+    // Tìm theo quận
+    if (query.districtId) {
+      where.AND.push({
+        districtId: parseInt(query.districtId, 10),
+      });
+    }
+
+    // Tìm theo loại đại lý
+    if (query.agentTypeId) {
+      where.AND.push({
+        agentTypeId: parseInt(query.agentTypeId, 10),
+      });
+    }
+
+    // Nếu không có điều kiện nào, trả về rỗng
+    if (where.AND.length === 0) {
+      return [];
+    }
+
+    const agents = await db.agent.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        address: true,
+        email: true,
+        debtAmount: true,
+        createdAt: true,
+        updatedAt: true,
+        district: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        agentType: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return agents;
+  }
 
   static async getById(id, ownerId) {
     const foundAgent = await prisma(ownerId).agent.findUnique({
