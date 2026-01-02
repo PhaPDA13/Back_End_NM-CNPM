@@ -62,11 +62,13 @@ export class AgentService {
         updatedAt: true,
         district: {
           select: {
+            id: true,
             name: true,
           },
         },
         agentType: {
           select: {
+            id: true,
             name: true,
           },
         },
