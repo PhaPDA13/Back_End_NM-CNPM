@@ -53,8 +53,8 @@ model ExportNote {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  agent Agent @relation(fields: [agentId], references: [id])
-  owner User  @relation(fields: [ownerId], references: [id])
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Restrict)
+  owner User  @relation(fields: [ownerId], references: [id], onDelete: Restrict)
 
   details ExportNoteDetail[]
 }
@@ -67,9 +67,9 @@ model ExportNoteDetail {
   price        Decimal  @db.Decimal(15,2)
   amount       Decimal? @db.Decimal(15,2)
 
-  exportNote ExportNote @relation(fields: [exportNoteId], references: [id])
-  product    Product    @relation(fields: [productId], references: [id])
-  unit       Unit       @relation(fields: [unitId], references: [id])
+  exportNote ExportNote @relation(fields: [exportNoteId], references: [id], onDelete: Cascade)
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  unit       Unit       @relation(fields: [unitId], references: [id], onDelete: Restrict)
 
   @@id([exportNoteId, productId, unitId])
 }
@@ -83,8 +83,8 @@ model Receipt {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  agent Agent @relation(fields: [agentId], references: [id])
-  owner User  @relation(fields: [ownerId], references: [id])
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Restrict)
+  owner User  @relation(fields: [ownerId], references: [id], onDelete: Restrict)
 }
 
 model AgentType {
@@ -92,15 +92,20 @@ model AgentType {
   name    String  @unique
   maxDebt Decimal @db.Decimal(15,2)
 
-  agents Agent[]
+  agents    Agent[]
+  products  AgentTypeProduct[]
 }
 
 model Product {
-  id    Int     @id @default(autoincrement())
-  name  String  @unique
-  price Decimal @db.Decimal(15,2)
+  id        Int     @id @default(autoincrement())
+  name      String  @unique
+  price     Decimal @db.Decimal(15,2)
+  isDeleted Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  details ExportNoteDetail[]
+  details   ExportNoteDetail[]
+  agentTypes AgentTypeProduct[]
 }
 
 model Unit {
@@ -128,4 +133,14 @@ model RefreshToken {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AgentTypeProduct {
+  agentTypeId Int
+  productId   Int
+
+  agentType AgentType @relation(fields: [agentTypeId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([agentTypeId, productId])
 }
