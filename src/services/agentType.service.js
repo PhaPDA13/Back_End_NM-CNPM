@@ -107,4 +107,91 @@ export class AgentTypeService {
       where: { id: parsedId },
     });
   }
+
+  // UPDATE - Cập nhật sản phẩm của loại đại lý
+  static async updateProducts(agentTypeId, productIds) {
+    const parsedTypeId = parseInt(agentTypeId, 10);
+
+    // Kiểm tra loại đại lý có tồn tại
+    const foundType = await prisma().agentType.findUnique({
+      where: { id: parsedTypeId },
+    });
+
+    if (!foundType) {
+      throw new ApiError(404, "Không tìm thấy loại đại lý");
+    }
+
+    // Kiểm tra tất cả sản phẩm có tồn tại và không bị xóa
+    const products = await prisma().product.findMany({
+      where: {
+        id: { in: productIds },
+        isDeleted: false,
+      },
+    });
+
+    if (products.length !== productIds.length) {
+      throw new ApiError(400, "Một hoặc nhiều sản phẩm không tồn tại hoặc đã bị xóa");
+    }
+
+    // Xóa tất cả sản phẩm hiện tại của loại đại lý này
+    await prisma().agentTypeProduct.deleteMany({
+      where: { agentTypeId: parsedTypeId },
+    });
+
+    // Thêm các sản phẩm mới
+    const agentTypeProducts = productIds.map((productId) => ({
+      agentTypeId: parsedTypeId,
+      productId: parseInt(productId, 10),
+    }));
+
+    await prisma().agentTypeProduct.createMany({
+      data: agentTypeProducts,
+    });
+
+    // Lấy lại dữ liệu đã cập nhật
+    return await prisma().agentType.findUnique({
+      where: { id: parsedTypeId },
+      include: {
+        products: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // READ - Lấy các sản phẩm của loại đại lý
+  static async getProducts(agentTypeId) {
+    const parsedTypeId = parseInt(agentTypeId, 10);
+
+    const type = await prisma().agentType.findUnique({
+      where: { id: parsedTypeId },
+      include: {
+        products: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!type) {
+      throw new ApiError(404, "Không tìm thấy loại đại lý");
+    }
+
+    return type;
+  }
 }

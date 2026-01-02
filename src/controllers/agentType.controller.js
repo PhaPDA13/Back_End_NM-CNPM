@@ -66,3 +66,32 @@ export const deleteAgentType = async (req, res, next) => {
     next(err);
   }
 };
+
+export const updateAgentTypeProducts = async (req, res, next) => {
+  try {
+    const typeId = req.params.id;
+    const { productIds } = req.body;
+    const updatedType = await AgentTypeService.updateProducts(typeId, productIds);
+    res.json({
+      success: true,
+      message: "Update agent type products",
+      data: updatedType,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getAgentTypeProducts = async (req, res, next) => {
+  try {
+    const typeId = req.params.id;
+    const type = await AgentTypeService.getProducts(typeId);
+    res.json({
+      success: true,
+      message: "Get agent type products",
+      data: type,
+    });
+  } catch (err) {
+    next(err);
+  }
+};

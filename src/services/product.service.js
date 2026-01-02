@@ -25,6 +25,9 @@ export class ProductService {
   // READ - Lấy tất cả sản phẩm
   static async getAll() {
     const products = await prisma().product.findMany({
+      where: {
+        isDeleted: false,
+      },
       select: {
         id: true,
         name: true,
@@ -44,7 +47,7 @@ export class ProductService {
       },
     });
 
-    if (!product) {
+    if (!product || product.isDeleted) {
       throw new ApiError(404, "Không tìm thấy sản phẩm");
     }
 
@@ -59,14 +62,17 @@ export class ProductService {
       where: { id: parsedId },
     });
 
-    if (!foundProduct) {
+    if (!foundProduct || foundProduct.isDeleted) {
       throw new ApiError(404, "Không tìm thấy sản phẩm");
     }
 
     // Kiểm tra tên trùng lặp nếu tên thay đổi
     if (data.name && data.name !== foundProduct.name) {
-      const existingProduct = await prisma().product.findUnique({
-        where: { name: data.name },
+      const existingProduct = await prisma().product.findFirst({
+        where: {
+          name: data.name,
+          isDeleted: false,
+        },
       });
       if (existingProduct) {
         throw new ApiError(400, "Tên sản phẩm đã tồn tại");
@@ -82,7 +88,7 @@ export class ProductService {
     });
   }
 
-  // DELETE - Xóa sản phẩm
+  // DELETE - Xóa mềm sản phẩm (soft delete)
   static async delete(id) {
     const parsedId = parseInt(id, 10);
 
@@ -90,12 +96,15 @@ export class ProductService {
       where: { id: parsedId },
     });
 
-    if (!foundProduct) {
+    if (!foundProduct || foundProduct.isDeleted) {
       throw new ApiError(404, "Không tìm thấy sản phẩm");
     }
 
-    return await prisma().product.delete({
+    return await prisma().product.update({
       where: { id: parsedId },
+      data: {
+        isDeleted: true,
+      },
     });
   }
 }

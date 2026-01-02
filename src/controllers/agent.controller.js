@@ -79,3 +79,16 @@ export const searchAgent = async (req, res, next) => {
     next(err);
   }
 };
+
+export const getTop5ByRevenue = async (req, res, next) => {
+  try {
+    const agents = await AgentService.getTop5ByRevenue(req.user.id);
+    res.json({
+      success: true,
+      message: "Get top 5 agents by revenue",
+      data: agents,
+    });
+  } catch (err) {
+    next(err);
+  }
+};

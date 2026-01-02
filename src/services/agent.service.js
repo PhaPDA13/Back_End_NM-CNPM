@@ -224,4 +224,78 @@ export class AgentService {
       },
     });
   }
+
+  // GET - Top 5 đại lý theo doanh thu trong tháng
+  static async getTop5ByRevenue(ownerId) {
+    const db = prisma(ownerId);
+
+    // Lấy ngày đầu tháng và cuối tháng
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    // Lấy danh sách đại lý với tổng doanh thu trong tháng
+    const agents = await db.agent.findMany({
+      where: {
+        exportNotes: {
+          some: {
+            issueDate: {
+              gte: firstDayOfMonth,
+              lte: lastDayOfMonth,
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        debtAmount: true,
+        district: {
+          select: {
+            name: true,
+          },
+        },
+        agentType: {
+          select: {
+            name: true,
+          },
+        },
+        exportNotes: {
+          where: {
+            issueDate: {
+              gte: firstDayOfMonth,
+              lte: lastDayOfMonth,
+            },
+          },
+          select: {
+            total: true,
+          },
+        },
+      },
+      orderBy: {
+        exportNotes: {
+          _count: "desc",
+        },
+      },
+      take: 5,
+    });
+
+    // Tính tổng doanh thu cho mỗi đại lý
+    const result = agents.map((agent) => ({
+      id: agent.id,
+      name: agent.name,
+      phone: agent.phone,
+      email: agent.email,
+      debtAmount: agent.debtAmount,
+      district: agent.district.name,
+      agentType: agent.agentType.name,
+      revenue: agent.exportNotes.reduce((sum, note) => sum + note.total, 0),
+      orderCount: agent.exportNotes.length,
+    }));
+
+    // Sắp xếp lại theo doanh thu giảm dần
+    return result.sort((a, b) => b.revenue - a.revenue);
+  }
 }
