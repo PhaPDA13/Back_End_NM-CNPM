@@ -2,7 +2,8 @@ import { UnitService } from "../services/unit.service.js";
 
 export const createUnit = async (req, res, next) => {
   try {
-    const createdUnit = await UnitService.create(req.body);
+    const ownerId = req.user.id;
+    const createdUnit = await UnitService.create(req.body, ownerId);
     res.json({
       success: true,
       message: "Create unit",
@@ -15,7 +16,8 @@ export const createUnit = async (req, res, next) => {
 
 export const getAllUnits = async (req, res, next) => {
   try {
-    const units = await UnitService.getAll();
+    const ownerId = req.user.id;
+    const units = await UnitService.getAll(ownerId);
     res.json({
       success: true,
       message: "Get all units",
@@ -28,8 +30,9 @@ export const getAllUnits = async (req, res, next) => {
 
 export const getUnitById = async (req, res, next) => {
   try {
+    const ownerId = req.user.id;
     const unitId = parseInt(req.params.id, 10);
-    const foundUnit = await UnitService.getById(unitId);
+    const foundUnit = await UnitService.getById(unitId, ownerId);
     res.json({
       success: true,
       message: "Get unit by id",
@@ -42,8 +45,9 @@ export const getUnitById = async (req, res, next) => {
 
 export const updateUnit = async (req, res, next) => {
   try {
+    const ownerId = req.user.id;
     const unitId = req.params.id;
-    const updatedUnit = await UnitService.update(unitId, req.body);
+    const updatedUnit = await UnitService.update(unitId, req.body, ownerId);
     res.json({
       success: true,
       message: "Update unit",
@@ -56,8 +60,9 @@ export const updateUnit = async (req, res, next) => {
 
 export const deleteUnit = async (req, res, next) => {
   try {
+    const ownerId = req.user.id;
     const unitId = req.params.id;
-    await UnitService.delete(unitId);
+    await UnitService.delete(unitId, ownerId);
     res.json({
       success: true,
       message: "Delete unit",

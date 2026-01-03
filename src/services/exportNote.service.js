@@ -85,8 +85,8 @@ export class ExportNoteService {
           );
         }
 
-        // Tính amount = quantity * price
-        const amount = quantity * price;
+        // Tính amount = quantity * price (và làm tròn 2 chữ số thập phân)
+        const amount = Math.round(quantity * price * 100) / 100;
         total += amount;
 
         detailsData.push({
@@ -98,12 +98,16 @@ export class ExportNoteService {
         });
       }
 
+      // Chuyển các giá trị Decimal sang Number để tính toán chính xác
+      const agentDebtAmount = parseFloat(agent.debtAmount.toString());
+      const maxDebt = parseFloat(agent.agentType.maxDebt.toString());
+
       // QĐ2: Kiểm tra tổng nợ sau xuất ≤ nợ tối đa
-      const debtAfterExport = agent.debtAmount + total;
-      if (debtAfterExport > agent.agentType.maxDebt) {
+      const debtAfterExport = Math.round((agentDebtAmount + total) * 100) / 100;
+      if (debtAfterExport > maxDebt) {
         throw new ApiError(
           400,
-          `Tổng nợ sau xuất (${debtAfterExport}) vượt quá giới hạn nợ (${agent.agentType.maxDebt})`
+          `Tổng nợ sau xuất (${debtAfterExport}) vượt quá giới hạn nợ (${maxDebt})`
         );
       }
 
@@ -112,10 +116,16 @@ export class ExportNoteService {
         data: {
           issueDate: new Date(data.issueDate),
           agentId,
-          total,
+          total: Math.round(total * 100) / 100,
           details: {
             createMany: {
-              data: detailsData,
+              data: detailsData.map((d) => ({
+                productId: d.productId,
+                unitId: d.unitId,
+                quantity: d.quantity,
+                price: Math.round(d.price * 100) / 100,
+                amount: Math.round(d.amount * 100) / 100,
+              })),
             },
           },
         },
@@ -131,7 +141,7 @@ export class ExportNoteService {
       });
 
       // Cập nhật debtAmount của đại lý
-      const newDebtAmount = agent.debtAmount + total;
+      const newDebtAmount = Math.round((agentDebtAmount + total) * 100) / 100;
       await tx.agent.update({
         where: { id: agentId },
         data: {

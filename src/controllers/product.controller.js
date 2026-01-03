@@ -2,7 +2,8 @@ import { ProductService } from "../services/product.service.js";
 
 export const createProduct = async (req, res, next) => {
   try {
-    const result = await ProductService.create(req.body);
+    const ownerId = req.user.id;
+    const result = await ProductService.create(req.body, ownerId);
     res.json({
       success: true,
       message: "Create product",
@@ -15,7 +16,8 @@ export const createProduct = async (req, res, next) => {
 
 export const getAllProducts = async (req, res, next) => {
   try {
-    const products = await ProductService.getAll();
+    const ownerId = req.user.id;
+    const products = await ProductService.getAll(ownerId);
     res.json({
       success: true,
       message: "Get all products",
@@ -28,8 +30,9 @@ export const getAllProducts = async (req, res, next) => {
 
 export const getProductById = async (req, res, next) => {
   try {
+    const ownerId = req.user.id;
     const productId = parseInt(req.params.id, 10);
-    const foundProduct = await ProductService.getById(productId);
+    const foundProduct = await ProductService.getById(productId, ownerId);
     res.json({
       success: true,
       message: "Get product by id",
@@ -42,16 +45,17 @@ export const getProductById = async (req, res, next) => {
 
 export const updateProduct = async (req, res, next) => {
   try {
+    const ownerId = req.user.id;
     const productId = req.params.id;
     const { name, price, unitIds } = req.body;
 
     // Cập nhật thông tin sản phẩm
-    const updatedProduct = await ProductService.update(productId, { name, price });
+    const updatedProduct = await ProductService.update(productId, { name, price }, ownerId);
 
     // Nếu có unitIds, cập nhật đơn vị tính
     let units = null;
     if (unitIds && Array.isArray(unitIds)) {
-      units = await ProductService.updateUnits(productId, unitIds);
+      units = await ProductService.updateUnits(productId, unitIds, ownerId);
     }
 
     res.json({
@@ -69,8 +73,9 @@ export const updateProduct = async (req, res, next) => {
 
 export const deleteProduct = async (req, res, next) => {
   try {
+    const ownerId = req.user.id;
     const productId = req.params.id;
-    await ProductService.delete(productId);
+    await ProductService.delete(productId, ownerId);
     res.json({
       success: true,
       message: "Delete product",
@@ -82,8 +87,9 @@ export const deleteProduct = async (req, res, next) => {
 
 export const getProductUnits = async (req, res, next) => {
   try {
+    const ownerId = req.user.id;
     const productId = req.params.id;
-    const units = await ProductService.getUnits(productId);
+    const units = await ProductService.getUnits(productId, ownerId);
     res.json({
       success: true,
       message: "Get product units",
