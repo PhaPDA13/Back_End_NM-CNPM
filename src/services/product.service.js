@@ -107,4 +107,81 @@ export class ProductService {
       },
     });
   }
+
+  // Cập nhật đơn vị tính của sản phẩm (xóa tất cả cũ, thêm các cái mới)
+  static async updateUnits(productId, unitIds) {
+    const parsedProductId = parseInt(productId, 10);
+
+    // Kiểm tra sản phẩm tồn tại
+    const product = await prisma().product.findUnique({
+      where: { id: parsedProductId },
+    });
+
+    if (!product || product.isDeleted) {
+      throw new ApiError(404, "Không tìm thấy sản phẩm");
+    }
+
+    // Kiểm tra tất cả đơn vị tính tồn tại
+    const units = await prisma().unit.findMany({
+      where: {
+        id: {
+          in: unitIds,
+        },
+      },
+    });
+
+    if (units.length !== unitIds.length) {
+      throw new ApiError(400, "Một hoặc nhiều đơn vị tính không tồn tại");
+    }
+
+    // Sử dụng transaction để đảm bảo tính nhất quán
+    return await prisma().$transaction(async (tx) => {
+      // Xóa tất cả đơn vị tính cũ
+      await tx.productUnit.deleteMany({
+        where: {
+          productId: parsedProductId,
+        },
+      });
+
+      // Thêm các đơn vị tính mới
+      const createdLinks = await tx.productUnit.createMany({
+        data: unitIds.map((unitId) => ({
+          productId: parsedProductId,
+          unitId: parseInt(unitId, 10),
+        })),
+      });
+
+      // Lấy danh sách đơn vị tính mới
+      return await tx.productUnit.findMany({
+        where: {
+          productId: parsedProductId,
+        },
+        include: {
+          unit: true,
+        },
+      });
+    });
+  }
+
+  // Lấy danh sách đơn vị tính của sản phẩm
+  static async getUnits(productId) {
+    const parsedProductId = parseInt(productId, 10);
+
+    const product = await prisma().product.findUnique({
+      where: { id: parsedProductId },
+    });
+
+    if (!product || product.isDeleted) {
+      throw new ApiError(404, "Không tìm thấy sản phẩm");
+    }
+
+    return await prisma().productUnit.findMany({
+      where: {
+        productId: parsedProductId,
+      },
+      include: {
+        unit: true,
+      },
+    });
+  }
 }

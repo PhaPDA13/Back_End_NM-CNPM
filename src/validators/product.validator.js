@@ -8,4 +8,5 @@ export const createProductSchema = Joi.object({
 export const updateProductSchema = Joi.object({
   name: Joi.string().max(100),
   price: Joi.number().positive(),
+  unitIds: Joi.array().items(Joi.number().positive()).min(0),
 });

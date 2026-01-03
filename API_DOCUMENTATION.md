@@ -555,7 +555,8 @@
   ```json
   {
     "name": "Sản phẩm A+",
-    "price": "110000"
+    "price": "110000",
+    "unitIds": [1, 2, 3]
   }
   ```
 - **Response (200):**
@@ -564,14 +565,74 @@
     "success": true,
     "message": "Update product",
     "data": {
-      /* updated product */
+      "product": {
+        "id": 1,
+        "name": "Sản phẩm A+",
+        "price": "110000.00",
+        "isDeleted": false,
+        "createdAt": "2024-01-02T...",
+        "updatedAt": "2024-01-02T..."
+      },
+      "units": [
+        {
+          "productId": 1,
+          "unitId": 1,
+          "unit": {
+            "id": 1,
+            "name": "Chiếc"
+          }
+        },
+        {
+          "productId": 1,
+          "unitId": 2,
+          "unit": {
+            "id": 2,
+            "name": "Hộp"
+          }
+        }
+      ]
     }
+  }
+  ```
+- **Note:**
+  - Nếu không gửi `unitIds`, chỉ cập nhật thông tin sản phẩm
+  - Nếu gửi `unitIds`, sẽ xóa tất cả đơn vị tính cũ và thêm vào các đơn vị mới
+
+---
+
+#### 5. Get Product Units - Lấy danh sách đơn vị tính của sản phẩm
+
+- **Method:** `GET`
+- **URL:** `/api/products/:id/units`
+- **Response (200):**
+  ```json
+  {
+    "success": true,
+    "message": "Get product units",
+    "data": [
+      {
+        "productId": 1,
+        "unitId": 1,
+        "unit": {
+          "id": 1,
+          "name": "Chiếc"
+        }
+      },
+      {
+        "productId": 1,
+        "unitId": 2,
+        "unit": {
+          "id": 2,
+          "name": "Hộp"
+        }
+      }
+    ]
   }
   ```
 
 ---
 
-#### 5. Delete Product - Xóa sản phẩm (Soft Delete)
+#### 6. Delete Product - Xóa sản phẩm (Soft Delete)
 
 - **Method:** `DELETE`
 - **URL:** `/api/products/:id`
@@ -848,6 +909,7 @@
     }
   }
   ```
+- **Note:** `remainingDebt` được lưu trong phiếu thu tiền, không phải phiếu xuất hàng
 
 ---
 
@@ -864,11 +926,14 @@
       {
         "id": 1,
         "issueDate": "2024-01-02",
-        "agentId": 1,
-        "ownerId": 1,
         "total": "1000000.00",
         "createdAt": "2024-01-02T...",
-        "updatedAt": "2024-01-02T..."
+        "updatedAt": "2024-01-02T...",
+        "agent": {
+          "id": 1,
+          "name": "Nguyễn Văn A",
+          "phone": "0912345678"
+        }
       }
     ]
   }
@@ -888,11 +953,13 @@
     "data": {
       "id": 1,
       "issueDate": "2024-01-02",
-      "agentId": 1,
-      "ownerId": 1,
       "total": "1000000.00",
       "createdAt": "2024-01-02T...",
       "updatedAt": "2024-01-02T...",
+      "agent": {
+        "id": 1,
+        "name": "Nguyễn Văn A"
+      },
       "details": [
         {
           "exportNoteId": 1,
@@ -900,7 +967,15 @@
           "unitId": 1,
           "quantity": 10,
           "price": "100000.00",
-          "amount": "1000000.00"
+          "amount": "1000000.00",
+          "product": {
+            "id": 1,
+            "name": "Sản phẩm A"
+          },
+          "unit": {
+            "id": 1,
+            "name": "Chiếc"
+          }
         }
       ]
     }
@@ -938,6 +1013,7 @@
       "id": 1,
       "payDate": "2024-01-02",
       "amount": "500000.00",
+      "remainingDebt": "4500000.00",
       "agentId": 1,
       "ownerId": 1,
       "createdAt": "2024-01-02T...",
@@ -945,6 +1021,7 @@
     }
   }
   ```
+- **Note:** `remainingDebt` là số nợ còn lại của đại lý **sau** khi phiếu thu này được tạo
 
 ---
 
@@ -962,10 +1039,15 @@
         "id": 1,
         "payDate": "2024-01-02",
         "amount": "500000.00",
-        "agentId": 1,
-        "ownerId": 1,
+        "remainingDebt": "4500000.00",
         "createdAt": "2024-01-02T...",
-        "updatedAt": "2024-01-02T..."
+        "updatedAt": "2024-01-02T...",
+        "agent": {
+          "id": 1,
+          "name": "Nguyễn Văn A",
+          "phone": "0912345678",
+          "debtAmount": "4500000.00"
+        }
       }
     ]
   }
@@ -986,15 +1068,15 @@
       "id": 1,
       "payDate": "2024-01-02",
       "amount": "500000.00",
+      "remainingDebt": "4500000.00",
       "agentId": 1,
       "ownerId": 1,
       "createdAt": "2024-01-02T...",
       "updatedAt": "2024-01-02T...",
       "agent": {
-        /* agent info */
-      },
-      "owner": {
-        /* owner info */
+        "id": 1,
+        "name": "Nguyễn Văn A",
+        "debtAmount": "4500000.00"
       }
     }
   }

@@ -6,6 +6,17 @@ export class AgentService {
   static async create(data, ownerId) {
     const db = prisma(ownerId);
 
+    // Kiểm tra email đã tồn tại chưa
+    const existingAgent = await prisma().agent.findUnique({
+      where: {
+        email: data.email,
+      },
+    });
+
+    if (existingAgent) {
+      throw new ApiError(400, "Email đã được sử dụng bởi đại lý khác");
+    }
+
     const foundDistrict = await prisma().district.findUnique({
       where: {
         id: data.districtId,
