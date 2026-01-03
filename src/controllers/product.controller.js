@@ -2,11 +2,11 @@ import { ProductService } from "../services/product.service.js";
 
 export const createProduct = async (req, res, next) => {
   try {
-    const createdProduct = await ProductService.create(req.body);
+    const result = await ProductService.create(req.body);
     res.json({
       success: true,
       message: "Create product",
-      data: createdProduct,
+      data: result,
     });
   } catch (err) {
     next(err);
