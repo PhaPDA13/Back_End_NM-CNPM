@@ -4,6 +4,7 @@ import { ReportService } from "../services/report.service.js";
 export const getSalesReport = async (req, res, next) => {
   try {
     const { month, year } = req.query;
+    const ownerId = req.user.id;
 
     if (!month || !year) {
       return res.status(400).json({
@@ -12,7 +13,7 @@ export const getSalesReport = async (req, res, next) => {
       });
     }
 
-    const report = await ReportService.getSalesReport(month, year);
+    const report = await ReportService.getSalesReport(month, year, ownerId);
     res.json({
       success: true,
       message: "Báo cáo doanh số (BM5.1)",
@@ -27,6 +28,7 @@ export const getSalesReport = async (req, res, next) => {
 export const getDebtReport = async (req, res, next) => {
   try {
     const { month, year } = req.query;
+    const ownerId = req.user.id;
 
     if (!month || !year) {
       return res.status(400).json({
@@ -35,7 +37,7 @@ export const getDebtReport = async (req, res, next) => {
       });
     }
 
-    const report = await ReportService.getDebtReport(month, year);
+    const report = await ReportService.getDebtReport(month, year, ownerId);
     res.json({
       success: true,
       message: "Báo cáo công nợ (BM5.2)",
@@ -50,6 +52,7 @@ export const getDebtReport = async (req, res, next) => {
 export const getSummaryReport = async (req, res, next) => {
   try {
     const { month, year } = req.query;
+    const ownerId = req.user.id;
 
     if (!month || !year) {
       return res.status(400).json({
@@ -58,7 +61,7 @@ export const getSummaryReport = async (req, res, next) => {
       });
     }
 
-    const report = await ReportService.getSummaryReport(month, year);
+    const report = await ReportService.getSummaryReport(month, year, ownerId);
     res.json({
       success: true,
       message: "Báo cáo tổng hợp",

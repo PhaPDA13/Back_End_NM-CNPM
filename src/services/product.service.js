@@ -3,8 +3,9 @@ import ApiError from "../utils/ApiError.js";
 
 export class ProductService {
   // CREATE - Tạo sản phẩm mới
-  static async create(data) {
-    const foundProduct = await prisma().product.findUnique({
+  static async create(data, ownerId) {
+    const db = prisma(ownerId);
+    const foundProduct = await db.product.findUnique({
       where: {
         name: data.name,
       },
@@ -16,7 +17,7 @@ export class ProductService {
 
     // Nếu có unitIds, kiểm tra tất cả unit tồn tại
     if (data.unitIds && Array.isArray(data.unitIds) && data.unitIds.length > 0) {
-      const units = await prisma().unit.findMany({
+      const units = await db.unit.findMany({
         where: {
           id: {
             in: data.unitIds,
@@ -30,7 +31,7 @@ export class ProductService {
     }
 
     // Sử dụng transaction để đảm bảo tính nhất quán
-    return await prisma().$transaction(async (tx) => {
+    return await db.$transaction(async (tx) => {
       const product = await tx.product.create({
         data: {
           name: data.name,
@@ -71,11 +72,9 @@ export class ProductService {
   }
 
   // READ - Lấy tất cả sản phẩm
-  static async getAll() {
-    const products = await prisma().product.findMany({
-      where: {
-        isDeleted: false,
-      },
+  static async getAll(ownerId) {
+    const db = prisma(ownerId);
+    const products = await db.product.findMany({
       select: {
         id: true,
         name: true,
@@ -87,15 +86,16 @@ export class ProductService {
   }
 
   // READ - Lấy sản phẩm theo ID
-  static async getById(id) {
-    const product = await prisma().product.findUnique({
+  static async getById(id, ownerId) {
+    const db = prisma(ownerId);
+    const product = await db.product.findUnique({
       where: { id: parseInt(id, 10) },
       include: {
         details: true,
       },
     });
 
-    if (!product || product.isDeleted) {
+    if (!product) {
       throw new ApiError(404, "Không tìm thấy sản phẩm");
     }
 
@@ -103,23 +103,23 @@ export class ProductService {
   }
 
   // UPDATE - Cập nhật sản phẩm
-  static async update(id, data) {
+  static async update(id, data, ownerId) {
+    const db = prisma(ownerId);
     const parsedId = parseInt(id, 10);
 
-    const foundProduct = await prisma().product.findUnique({
+    const foundProduct = await db.product.findUnique({
       where: { id: parsedId },
     });
 
-    if (!foundProduct || foundProduct.isDeleted) {
+    if (!foundProduct) {
       throw new ApiError(404, "Không tìm thấy sản phẩm");
     }
 
     // Kiểm tra tên trùng lặp nếu tên thay đổi
     if (data.name && data.name !== foundProduct.name) {
-      const existingProduct = await prisma().product.findFirst({
+      const existingProduct = await db.product.findFirst({
         where: {
           name: data.name,
-          isDeleted: false,
         },
       });
       if (existingProduct) {
@@ -127,7 +127,7 @@ export class ProductService {
       }
     }
 
-    return await prisma().product.update({
+    return await db.product.update({
       where: { id: parsedId },
       data: {
         name: data.name,
@@ -137,18 +137,19 @@ export class ProductService {
   }
 
   // DELETE - Xóa mềm sản phẩm (soft delete)
-  static async delete(id) {
+  static async delete(id, ownerId) {
+    const db = prisma(ownerId);
     const parsedId = parseInt(id, 10);
 
-    const foundProduct = await prisma().product.findUnique({
+    const foundProduct = await db.product.findUnique({
       where: { id: parsedId },
     });
 
-    if (!foundProduct || foundProduct.isDeleted) {
+    if (!foundProduct) {
       throw new ApiError(404, "Không tìm thấy sản phẩm");
     }
 
-    return await prisma().product.update({
+    return await db.product.update({
       where: { id: parsedId },
       data: {
         isDeleted: true,
@@ -157,20 +158,21 @@ export class ProductService {
   }
 
   // Cập nhật đơn vị tính của sản phẩm (xóa tất cả cũ, thêm các cái mới)
-  static async updateUnits(productId, unitIds) {
+  static async updateUnits(productId, unitIds, ownerId) {
+    const db = prisma(ownerId);
     const parsedProductId = parseInt(productId, 10);
 
     // Kiểm tra sản phẩm tồn tại
-    const product = await prisma().product.findUnique({
+    const product = await db.product.findUnique({
       where: { id: parsedProductId },
     });
 
-    if (!product || product.isDeleted) {
+    if (!product) {
       throw new ApiError(404, "Không tìm thấy sản phẩm");
     }
 
     // Kiểm tra tất cả đơn vị tính tồn tại
-    const units = await prisma().unit.findMany({
+    const units = await db.unit.findMany({
       where: {
         id: {
           in: unitIds,
@@ -183,7 +185,7 @@ export class ProductService {
     }
 
     // Sử dụng transaction để đảm bảo tính nhất quán
-    return await prisma().$transaction(async (tx) => {
+    return await db.$transaction(async (tx) => {
       // Xóa tất cả đơn vị tính cũ
       await tx.productUnit.deleteMany({
         where: {
@@ -212,18 +214,19 @@ export class ProductService {
   }
 
   // Lấy danh sách đơn vị tính của sản phẩm
-  static async getUnits(productId) {
+  static async getUnits(productId, ownerId) {
+    const db = prisma(ownerId);
     const parsedProductId = parseInt(productId, 10);
 
-    const product = await prisma().product.findUnique({
+    const product = await db.product.findUnique({
       where: { id: parsedProductId },
     });
 
-    if (!product || product.isDeleted) {
+    if (!product) {
       throw new ApiError(404, "Không tìm thấy sản phẩm");
     }
 
-    return await prisma().productUnit.findMany({
+    return await db.productUnit.findMany({
       where: {
         productId: parsedProductId,
       },

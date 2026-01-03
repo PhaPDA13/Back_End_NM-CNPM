@@ -8,7 +8,7 @@ const adapter = new PrismaPg({ connectionString });
 const prismaClient = new PrismaClient({ adapter });
 
 /** Models có ownerId (multi-tenant) */
-const TENANT_MODELS = ["Agent", "ExportNote", "Receipt"];
+const TENANT_MODELS = ["Agent", "ExportNote", "Receipt", "Product", "Unit"];
 
 /** Models có soft-delete */
 const SOFT_DELETE_MODELS = ["Agent", "Product"];

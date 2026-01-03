@@ -3,8 +3,9 @@ import ApiError from "../utils/ApiError.js";
 
 export class UnitService {
   // CREATE - Tạo đơn vị tính mới
-  static async create(data) {
-    const foundUnit = await prisma().unit.findUnique({
+  static async create(data, ownerId) {
+    const db = prisma(ownerId);
+    const foundUnit = await db.unit.findUnique({
       where: {
         name: data.name,
       },
@@ -14,7 +15,7 @@ export class UnitService {
       throw new ApiError(400, "Đơn vị tính đã tồn tại");
     }
 
-    return await prisma().unit.create({
+    return await db.unit.create({
       data: {
         name: data.name,
       },
@@ -22,8 +23,9 @@ export class UnitService {
   }
 
   // READ - Lấy tất cả đơn vị tính
-  static async getAll() {
-    const units = await prisma().unit.findMany({
+  static async getAll(ownerId) {
+    const db = prisma(ownerId);
+    const units = await db.unit.findMany({
       select: {
         id: true,
         name: true,
@@ -34,8 +36,9 @@ export class UnitService {
   }
 
   // READ - Lấy đơn vị tính theo ID
-  static async getById(id) {
-    const unit = await prisma().unit.findUnique({
+  static async getById(id, ownerId) {
+    const db = prisma(ownerId);
+    const unit = await db.unit.findUnique({
       where: { id: parseInt(id, 10) },
       include: {
         details: true,
@@ -50,10 +53,11 @@ export class UnitService {
   }
 
   // UPDATE - Cập nhật đơn vị tính
-  static async update(id, data) {
+  static async update(id, data, ownerId) {
+    const db = prisma(ownerId);
     const parsedId = parseInt(id, 10);
 
-    const foundUnit = await prisma().unit.findUnique({
+    const foundUnit = await db.unit.findUnique({
       where: { id: parsedId },
     });
 
@@ -63,7 +67,7 @@ export class UnitService {
 
     // Kiểm tra tên trùng lặp nếu tên thay đổi
     if (data.name && data.name !== foundUnit.name) {
-      const existingUnit = await prisma().unit.findUnique({
+      const existingUnit = await db.unit.findUnique({
         where: { name: data.name },
       });
       if (existingUnit) {
@@ -71,7 +75,7 @@ export class UnitService {
       }
     }
 
-    return await prisma().unit.update({
+    return await db.unit.update({
       where: { id: parsedId },
       data: {
         name: data.name,
@@ -80,10 +84,11 @@ export class UnitService {
   }
 
   // DELETE - Xóa đơn vị tính
-  static async delete(id) {
+  static async delete(id, ownerId) {
+    const db = prisma(ownerId);
     const parsedId = parseInt(id, 10);
 
-    const foundUnit = await prisma().unit.findUnique({
+    const foundUnit = await db.unit.findUnique({
       where: { id: parsedId },
     });
 
@@ -92,7 +97,7 @@ export class UnitService {
     }
 
     // Kiểm tra đơn vị tính có được sử dụng không
-    const detailCount = await prisma().exportNoteDetail.count({
+    const detailCount = await db.exportNoteDetail.count({
       where: { unitId: parsedId },
     });
 
@@ -100,7 +105,7 @@ export class UnitService {
       throw new ApiError(400, "Không thể xóa đơn vị tính đang được sử dụng");
     }
 
-    return await prisma().unit.delete({
+    return await db.unit.delete({
       where: { id: parsedId },
     });
   }

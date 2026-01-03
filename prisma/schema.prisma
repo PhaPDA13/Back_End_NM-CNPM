@@ -19,6 +19,8 @@ model User {
   agents        Agent[]
   receipts      Receipt[]
   exportNotes   ExportNote[]
+  products      Product[]
+  units         Unit[]
   refreshTokens RefreshToken[]
 }
 
@@ -101,19 +103,25 @@ model Product {
   id        Int     @id @default(autoincrement())
   name      String  @unique
   price     Decimal @db.Decimal(15,2)
+  ownerId   Int
   isDeleted Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  details   ExportNoteDetail[]
+  owner      User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  details    ExportNoteDetail[]
   agentTypes AgentTypeProduct[]
-  units     ProductUnit[]
+  units      ProductUnit[]
 }
 
 model Unit {
-  id   Int    @id @default(autoincrement())
-  name String @unique
+  id      Int    @id @default(autoincrement())
+  name    String @unique
+  ownerId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  owner    User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   details  ExportNoteDetail[]
   products ProductUnit[]
 }

@@ -3,7 +3,7 @@ import ApiError from "../utils/ApiError.js";
 
 export class ReportService {
   // Báo cáo doanh số theo tháng
-  static async getSalesReport(month, year) {
+  static async getSalesReport(month, year, ownerId) {
     const year_int = parseInt(year, 10);
     const month_int = parseInt(month, 10);
 
@@ -24,8 +24,10 @@ export class ReportService {
     const startDate = new Date(year_int, month_int - 1, 1);
     const endDate = new Date(year_int, month_int, 0);
 
+    const db = prisma(ownerId);
+
     // Lấy tổng doanh số toàn bộ trong tháng
-    const totalRevenueResult = await prisma().exportNote.aggregate({
+    const totalRevenueResult = await db.exportNote.aggregate({
       _sum: {
         total: true,
       },
@@ -40,7 +42,7 @@ export class ReportService {
     const totalRevenue = totalRevenueResult._sum.total || 0;
 
     // Lấy danh sách đại lý có doanh số trong tháng
-    const agentSalesGroups = await prisma().exportNote.groupBy({
+    const agentSalesGroups = await db.exportNote.groupBy({
       by: ["agentId"],
       _sum: {
         total: true,
@@ -58,12 +60,11 @@ export class ReportService {
     });
 
     // Lấy thông tin đại lý có doanh số
-    const agents = await prisma().agent.findMany({
+    const agents = await db.agent.findMany({
       where: {
         id: {
           in: agentSalesGroups.map((group) => group.agentId),
         },
-        isDeleted: false,
       },
       select: {
         id: true,
@@ -103,7 +104,7 @@ export class ReportService {
   }
 
   // Báo cáo công nợ theo tháng
-  static async getDebtReport(month, year) {
+  static async getDebtReport(month, year, ownerId) {
     const year_int = parseInt(year, 10);
     const month_int = parseInt(month, 10);
 
@@ -124,8 +125,10 @@ export class ReportService {
     const startDate = new Date(year_int, month_int - 1, 1);
     const endDate = new Date(year_int, month_int, 0);
 
+    const db = prisma(ownerId);
+
     // Lấy danh sách đại lý có phát sinh nợ hoặc thanh toán trong tháng
-    const agentIdsWithDebt = await prisma().exportNote.findMany({
+    const agentIdsWithDebt = await db.exportNote.findMany({
       where: {
         issueDate: {
           gte: startDate,
@@ -138,7 +141,7 @@ export class ReportService {
       distinct: ["agentId"],
     });
 
-    const agentIdsWithPayment = await prisma().receipt.findMany({
+    const agentIdsWithPayment = await db.receipt.findMany({
       where: {
         payDate: {
           gte: startDate,
@@ -158,12 +161,11 @@ export class ReportService {
     ]);
 
     // Lấy thông tin đại lý cần lấy báo cáo
-    const agents = await prisma().agent.findMany({
+    const agents = await db.agent.findMany({
       where: {
         id: {
           in: Array.from(agentIdsSet),
         },
-        isDeleted: false,
       },
       select: {
         id: true,
@@ -179,7 +181,7 @@ export class ReportService {
     const debtData = await Promise.all(
       agents.map(async (agent) => {
         // Phát sinh nợ = tổng xuất hàng trong tháng
-        const issueResult = await prisma().exportNote.aggregate({
+        const issueResult = await db.exportNote.aggregate({
           _sum: {
             total: true,
           },
@@ -195,7 +197,7 @@ export class ReportService {
         const issuedDebt = issueResult._sum.total || 0;
 
         // Thanh toán = tổng tiền thu trong tháng
-        const paymentResult = await prisma().receipt.aggregate({
+        const paymentResult = await db.receipt.aggregate({
           _sum: {
             amount: true,
           },
@@ -212,7 +214,7 @@ export class ReportService {
 
         // Nợ đầu kỳ = Tổng tất cả phiếu xuất trước tháng - tổng tất cả phiếu thu trước tháng
         let beginningDebt = 0;
-        const totalExportBeforeMonth = await prisma().exportNote.aggregate({
+        const totalExportBeforeMonth = await db.exportNote.aggregate({
           _sum: {
             total: true,
           },
@@ -224,7 +226,7 @@ export class ReportService {
           },
         });
 
-        const totalPaymentBeforeMonth = await prisma().receipt.aggregate({
+        const totalPaymentBeforeMonth = await db.receipt.aggregate({
           _sum: {
             amount: true,
           },
@@ -241,7 +243,7 @@ export class ReportService {
 
         // Nợ cuối kỳ = remainingDebt của phiếu thu cuối cùng TRONG tháng này
         let endingDebt = beginningDebt + issuedDebt - payment;
-        const lastReceiptInMonth = await prisma().receipt.findFirst({
+        const lastReceiptInMonth = await db.receipt.findFirst({
           where: {
             agentId: agent.id,
             payDate: {
@@ -280,9 +282,9 @@ export class ReportService {
   }
 
   // Báo cáo tổng hợp (kết hợp cả doanh số và công nợ)
-  static async getSummaryReport(month, year) {
-    const salesReport = await this.getSalesReport(month, year);
-    const debtReport = await this.getDebtReport(month, year);
+  static async getSummaryReport(month, year, ownerId) {
+    const salesReport = await this.getSalesReport(month, year, ownerId);
+    const debtReport = await this.getDebtReport(month, year, ownerId);
 
     return {
       month: parseInt(month, 10),
