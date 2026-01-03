@@ -116,7 +116,7 @@ model Product {
 
 model Unit {
   id      Int    @id @default(autoincrement())
-  name    String @unique
+  name    String
   ownerId Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

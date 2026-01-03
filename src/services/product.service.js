@@ -79,6 +79,7 @@ export class ProductService {
         id: true,
         name: true,
         price: true,
+        units: true
       },
     });
 
