@@ -24,21 +24,6 @@ export class ReportService {
     const startDate = new Date(year_int, month_int - 1, 1);
     const endDate = new Date(year_int, month_int, 0);
 
-    // Lấy tất cả đại lý chưa bị xóa
-    const agents = await prisma().agent.findMany({
-      where: {
-        isDeleted: false,
-      },
-      select: {
-        id: true,
-        name: true,
-        debtAmount: true,
-      },
-      orderBy: {
-        id: "asc",
-      },
-    });
-
     // Lấy tổng doanh số toàn bộ trong tháng
     const totalRevenueResult = await prisma().exportNote.aggregate({
       _sum: {
@@ -54,25 +39,49 @@ export class ReportService {
 
     const totalRevenue = totalRevenueResult._sum.total || 0;
 
-    // Lấy doanh số từng đại lý
-    const salesData = await Promise.all(
-      agents.map(async (agent) => {
-        const agentSales = await prisma().exportNote.aggregate({
-          _sum: {
-            total: true,
-          },
-          _count: true,
-          where: {
-            agentId: agent.id,
-            issueDate: {
-              gte: startDate,
-              lte: endDate,
-            },
-          },
-        });
+    // Lấy danh sách đại lý có doanh số trong tháng
+    const agentSalesGroups = await prisma().exportNote.groupBy({
+      by: ["agentId"],
+      _sum: {
+        total: true,
+      },
+      _count: true,
+      where: {
+        issueDate: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      orderBy: {
+        agentId: "asc",
+      },
+    });
 
-        const agentRevenue = agentSales._sum.total || 0;
-        const billCount = agentSales._count || 0;
+    // Lấy thông tin đại lý có doanh số
+    const agents = await prisma().agent.findMany({
+      where: {
+        id: {
+          in: agentSalesGroups.map((group) => group.agentId),
+        },
+        isDeleted: false,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    // Tạo map để lookup thông tin đại lý
+    const agentMap = new Map(agents.map((agent) => [agent.id, agent]));
+
+    // Xây dựng salesData từ các đại lý có doanh số
+    const salesData = agentSalesGroups
+      .map((group) => {
+        const agent = agentMap.get(group.agentId);
+        if (!agent) return null;
+
+        const agentRevenue = group._sum.total || 0;
+        const billCount = group._count || 0;
         const percentage = totalRevenue > 0 ? ((agentRevenue / totalRevenue) * 100).toFixed(2) : 0;
 
         return {
@@ -83,13 +92,13 @@ export class ReportService {
           percentage: parseFloat(percentage),
         };
       })
-    );
+      .filter((item) => item !== null);
 
     return {
       month: month_int,
       year: year_int,
       totalRevenue: parseFloat(totalRevenue.toString()),
-      salesData: salesData.filter((item) => item.billCount > 0 || item.totalRevenue > 0),
+      salesData: salesData,
     };
   }
 
@@ -115,9 +124,45 @@ export class ReportService {
     const startDate = new Date(year_int, month_int - 1, 1);
     const endDate = new Date(year_int, month_int, 0);
 
-    // Lấy tất cả đại lý chưa bị xóa
+    // Lấy danh sách đại lý có phát sinh nợ hoặc thanh toán trong tháng
+    const agentIdsWithDebt = await prisma().exportNote.findMany({
+      where: {
+        issueDate: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      select: {
+        agentId: true,
+      },
+      distinct: ["agentId"],
+    });
+
+    const agentIdsWithPayment = await prisma().receipt.findMany({
+      where: {
+        payDate: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      select: {
+        agentId: true,
+      },
+      distinct: ["agentId"],
+    });
+
+    // Gộp lại danh sách đại lý duy nhất
+    const agentIdsSet = new Set([
+      ...agentIdsWithDebt.map((item) => item.agentId),
+      ...agentIdsWithPayment.map((item) => item.agentId),
+    ]);
+
+    // Lấy thông tin đại lý cần lấy báo cáo
     const agents = await prisma().agent.findMany({
       where: {
+        id: {
+          in: Array.from(agentIdsSet),
+        },
         isDeleted: false,
       },
       select: {
@@ -165,9 +210,7 @@ export class ReportService {
 
         const payment = paymentResult._sum.amount || 0;
 
-        // Nợ đầu kỳ = nợ cuối kỳ tháng trước
-        // Nợ cuối kỳ = nợ hiện tại (debtAmount)
-        // Nợ đầu kỳ = nợ cuối kỳ - phát sinh + thanh toán
+        // Nợ đầu kỳ = nợ hiện tại - phát sinh + thanh toán
         const beginningDebt = agent.debtAmount - issuedDebt + payment;
 
         return {
@@ -184,9 +227,7 @@ export class ReportService {
     return {
       month: month_int,
       year: year_int,
-      debtData: debtData.filter(
-        (item) => item.beginningDebt > 0 || item.issuedDebt > 0 || item.endingDebt > 0
-      ),
+      debtData: debtData,
     };
   }
 

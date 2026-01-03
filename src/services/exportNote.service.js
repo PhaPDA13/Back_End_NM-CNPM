@@ -23,27 +23,58 @@ export class ExportNoteService {
         throw new ApiError(400, "Phiếu xuất phải có ít nhất một mặt hàng");
       }
 
-      // Kiểm tra sản phẩm, unit tồn tại và tính tổng tiền
+      // Lấy các sản phẩm được phép cho loại đại lý này
+      const allowedProducts = await prisma().agentTypeProduct.findMany({
+        where: {
+          agentTypeId: agent.agentTypeId,
+        },
+        select: {
+          productId: true,
+        },
+      });
+
+      const allowedProductIds = new Set(allowedProducts.map((ap) => ap.productId));
+
+      // Lấy thông tin tất cả sản phẩm và đơn vị tính cần dùng
+      const productIds = data.details.map((d) => d.productId);
+      const unitIds = data.details.map((d) => d.unitId);
+
+      const products = await prisma().product.findMany({
+        where: {
+          id: { in: productIds },
+        },
+      });
+
+      const units = await prisma().unit.findMany({
+        where: {
+          id: { in: unitIds },
+        },
+      });
+
+      const productMap = new Map(products.map((p) => [p.id, p]));
+      const unitMap = new Map(units.map((u) => [u.id, u]));
+
+      // Kiểm tra sản phẩm, unit tồn tại, được phép cho đại lý và tính tổng tiền
       let total = 0;
       const detailsData = [];
 
       for (const detail of data.details) {
-        // Kiểm tra sản phẩm tồn tại
-        const product = await prisma().product.findUnique({
-          where: { id: detail.productId },
-        });
-
+        const product = productMap.get(detail.productId);
         if (!product) {
           throw new ApiError(400, `Sản phẩm ID ${detail.productId} không tồn tại`);
         }
 
-        // Kiểm tra unit tồn tại
-        const unit = await prisma().unit.findUnique({
-          where: { id: detail.unitId },
-        });
-
+        const unit = unitMap.get(detail.unitId);
         if (!unit) {
           throw new ApiError(400, `Đơn vị tính ID ${detail.unitId} không tồn tại`);
+        }
+
+        // Kiểm tra sản phẩm có được phép xuất cho loại đại lý này không
+        if (!allowedProductIds.has(detail.productId)) {
+          throw new ApiError(
+            400,
+            `Sản phẩm "${product.name}" không được phép xuất cho loại đại lý "${agent.agentType.name}"`
+          );
         }
 
         // Tính amount = quantity * price
