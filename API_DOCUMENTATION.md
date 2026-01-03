@@ -632,7 +632,34 @@
 
 ---
 
-#### 6. Delete Product - Xóa sản phẩm (Soft Delete)
+#### 6. Get Products by Agent Type - Lấy danh sách sản phẩm theo loại đại lý
+
+- **Method:** `GET`
+- **URL:** `/api/agent-types/:id/products`
+- **Response (200):**
+  ```json
+  {
+    "success": true,
+    "message": "Get agent type products",
+    "data": [
+      {
+        "id": 1,
+        "name": "Sản phẩm A",
+        "price": "100000.00"
+      },
+      {
+        "id": 2,
+        "name": "Sản phẩm B",
+        "price": "150000.00"
+      }
+    ]
+  }
+  ```
+- **Note:** Lấy tất cả sản phẩm được phép xuất cho một loại đại lý cụ thể
+
+---
+
+#### 7. Delete Product - Xóa sản phẩm (Soft Delete)
 
 - **Method:** `DELETE`
 - **URL:** `/api/products/:id`
