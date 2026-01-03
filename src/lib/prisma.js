@@ -11,7 +11,7 @@ const prismaClient = new PrismaClient({ adapter });
 const TENANT_MODELS = ["Agent", "ExportNote", "Receipt"];
 
 /** Models có soft-delete */
-const SOFT_DELETE_MODELS = ["Agent"];
+const SOFT_DELETE_MODELS = ["Agent", "Product"];
 
 /**
  * Prisma Client với multi-tenant support
