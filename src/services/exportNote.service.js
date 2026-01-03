@@ -8,9 +8,12 @@ export class ExportNoteService {
 
     // Sử dụng transaction để đảm bảo tính nhất quán dữ liệu
     return await db.$transaction(async (tx) => {
+      // Parse và validate dữ liệu từ request
+      const agentId = parseInt(data.agentId, 10);
+
       // Kiểm tra agent tồn tại
       const agent = await tx.agent.findUnique({
-        where: { id: data.agentId },
+        where: { id: agentId },
         include: { agentType: true },
       });
 
@@ -36,8 +39,8 @@ export class ExportNoteService {
       const allowedProductIds = new Set(allowedProducts.map((ap) => ap.productId));
 
       // Lấy thông tin tất cả sản phẩm và đơn vị tính cần dùng
-      const productIds = data.details.map((d) => d.productId);
-      const unitIds = data.details.map((d) => d.unitId);
+      const productIds = data.details.map((d) => parseInt(d.productId, 10));
+      const unitIds = data.details.map((d) => parseInt(d.unitId, 10));
 
       const products = await prisma().product.findMany({
         where: {
@@ -59,18 +62,23 @@ export class ExportNoteService {
       const detailsData = [];
 
       for (const detail of data.details) {
-        const product = productMap.get(detail.productId);
+        const productId = parseInt(detail.productId, 10);
+        const unitId = parseInt(detail.unitId, 10);
+        const quantity = parseInt(detail.quantity, 10);
+        const price = parseFloat(detail.price);
+
+        const product = productMap.get(productId);
         if (!product) {
-          throw new ApiError(400, `Sản phẩm ID ${detail.productId} không tồn tại`);
+          throw new ApiError(400, `Sản phẩm ID ${productId} không tồn tại`);
         }
 
-        const unit = unitMap.get(detail.unitId);
+        const unit = unitMap.get(unitId);
         if (!unit) {
-          throw new ApiError(400, `Đơn vị tính ID ${detail.unitId} không tồn tại`);
+          throw new ApiError(400, `Đơn vị tính ID ${unitId} không tồn tại`);
         }
 
         // Kiểm tra sản phẩm có được phép xuất cho loại đại lý này không
-        if (!allowedProductIds.has(detail.productId)) {
+        if (!allowedProductIds.has(productId)) {
           throw new ApiError(
             400,
             `Sản phẩm "${product.name}" không được phép xuất cho loại đại lý "${agent.agentType.name}"`
@@ -78,14 +86,14 @@ export class ExportNoteService {
         }
 
         // Tính amount = quantity * price
-        const amount = detail.quantity * detail.price;
+        const amount = quantity * price;
         total += amount;
 
         detailsData.push({
-          productId: detail.productId,
-          unitId: detail.unitId,
-          quantity: detail.quantity,
-          price: detail.price,
+          productId,
+          unitId,
+          quantity,
+          price,
           amount,
         });
       }
@@ -103,7 +111,7 @@ export class ExportNoteService {
       const exportNote = await tx.exportNote.create({
         data: {
           issueDate: new Date(data.issueDate),
-          agentId: data.agentId,
+          agentId,
           total,
           details: {
             createMany: {
@@ -125,7 +133,7 @@ export class ExportNoteService {
       // Cập nhật debtAmount của đại lý
       const newDebtAmount = agent.debtAmount + total;
       await tx.agent.update({
-        where: { id: data.agentId },
+        where: { id: agentId },
         data: {
           debtAmount: newDebtAmount,
         },
