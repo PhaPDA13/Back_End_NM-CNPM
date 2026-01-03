@@ -14,11 +14,59 @@ export class ProductService {
       throw new ApiError(400, "Sản phẩm đã tồn tại");
     }
 
-    return await prisma().product.create({
-      data: {
-        name: data.name,
-        price: parseFloat(data.price),
-      },
+    // Nếu có unitIds, kiểm tra tất cả unit tồn tại
+    if (data.unitIds && Array.isArray(data.unitIds) && data.unitIds.length > 0) {
+      const units = await prisma().unit.findMany({
+        where: {
+          id: {
+            in: data.unitIds,
+          },
+        },
+      });
+
+      if (units.length !== data.unitIds.length) {
+        throw new ApiError(400, "Một hoặc nhiều đơn vị tính không tồn tại");
+      }
+    }
+
+    // Sử dụng transaction để đảm bảo tính nhất quán
+    return await prisma().$transaction(async (tx) => {
+      const product = await tx.product.create({
+        data: {
+          name: data.name,
+          price: parseFloat(data.price),
+        },
+      });
+
+      // Nếu có unitIds, gắn các unit vào sản phẩm
+      if (data.unitIds && Array.isArray(data.unitIds) && data.unitIds.length > 0) {
+        await tx.productUnit.createMany({
+          data: data.unitIds.map((unitId) => ({
+            productId: product.id,
+            unitId: parseInt(unitId, 10),
+          })),
+        });
+
+        // Lấy danh sách unit mới tạo
+        const units = await tx.productUnit.findMany({
+          where: {
+            productId: product.id,
+          },
+          include: {
+            unit: true,
+          },
+        });
+
+        return {
+          product,
+          units,
+        };
+      }
+
+      return {
+        product,
+        units: [],
+      };
     });
   }
 

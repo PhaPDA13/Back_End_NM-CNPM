@@ -480,7 +480,8 @@
   ```json
   {
     "name": "Sản phẩm A",
-    "price": "100000"
+    "price": "100000",
+    "unitIds": [1, 2, 3]
   }
   ```
 - **Response (200):**
@@ -489,15 +490,38 @@
     "success": true,
     "message": "Create product",
     "data": {
-      "id": 1,
-      "name": "Sản phẩm A",
-      "price": "100000.00",
-      "isDeleted": false,
-      "createdAt": "2024-01-02T...",
-      "updatedAt": "2024-01-02T..."
+      "product": {
+        "id": 1,
+        "name": "Sản phẩm A",
+        "price": "100000.00",
+        "isDeleted": false,
+        "createdAt": "2024-01-02T...",
+        "updatedAt": "2024-01-02T..."
+      },
+      "units": [
+        {
+          "productId": 1,
+          "unitId": 1,
+          "unit": {
+            "id": 1,
+            "name": "Chiếc"
+          }
+        },
+        {
+          "productId": 1,
+          "unitId": 2,
+          "unit": {
+            "id": 2,
+            "name": "Hộp"
+          }
+        }
+      ]
     }
   }
   ```
+- **Note:**
+  - `unitIds` là tùy chọn
+  - Nếu không gửi `unitIds`, sẽ trả về mảng rỗng
 
 ---
 
