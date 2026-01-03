@@ -123,10 +123,11 @@ export class ExportNoteService {
       });
 
       // Cập nhật debtAmount của đại lý
+      const newDebtAmount = agent.debtAmount + total;
       await tx.agent.update({
         where: { id: data.agentId },
         data: {
-          debtAmount: agent.debtAmount + total,
+          debtAmount: newDebtAmount,
         },
       });
 

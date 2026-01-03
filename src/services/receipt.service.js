@@ -26,10 +26,12 @@ export class ReceiptService {
       }
 
       // Tạo phiếu thu tiền
+      const remainingDebt = agent.debtAmount - parseFloat(data.amount);
       const receipt = await tx.receipt.create({
         data: {
           payDate: new Date(data.payDate),
           amount: parseFloat(data.amount),
+          remainingDebt,
           agentId: data.agentId,
         },
         include: {
@@ -41,7 +43,7 @@ export class ReceiptService {
       await tx.agent.update({
         where: { id: data.agentId },
         data: {
-          debtAmount: agent.debtAmount - parseFloat(data.amount),
+          debtAmount: remainingDebt,
         },
       });
 
@@ -56,6 +58,7 @@ export class ReceiptService {
         id: true,
         payDate: true,
         amount: true,
+        remainingDebt: true,
         createdAt: true,
         updatedAt: true,
         agent: {

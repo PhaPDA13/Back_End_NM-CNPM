@@ -210,8 +210,56 @@ export class ReportService {
 
         const payment = paymentResult._sum.amount || 0;
 
-        // Nợ đầu kỳ = nợ hiện tại - phát sinh + thanh toán
-        const beginningDebt = agent.debtAmount - issuedDebt + payment;
+        // Nợ đầu kỳ = Tổng tất cả phiếu xuất trước tháng - tổng tất cả phiếu thu trước tháng
+        let beginningDebt = 0;
+        const totalExportBeforeMonth = await prisma().exportNote.aggregate({
+          _sum: {
+            total: true,
+          },
+          where: {
+            agentId: agent.id,
+            issueDate: {
+              lt: startDate,
+            },
+          },
+        });
+
+        const totalPaymentBeforeMonth = await prisma().receipt.aggregate({
+          _sum: {
+            amount: true,
+          },
+          where: {
+            agentId: agent.id,
+            payDate: {
+              lt: startDate,
+            },
+          },
+        });
+
+        beginningDebt =
+          (totalExportBeforeMonth._sum.total || 0) - (totalPaymentBeforeMonth._sum.amount || 0);
+
+        // Nợ cuối kỳ = remainingDebt của phiếu thu cuối cùng TRONG tháng này
+        let endingDebt = beginningDebt + issuedDebt - payment;
+        const lastReceiptInMonth = await prisma().receipt.findFirst({
+          where: {
+            agentId: agent.id,
+            payDate: {
+              gte: startDate,
+              lte: endDate,
+            },
+          },
+          select: {
+            remainingDebt: true,
+          },
+          orderBy: {
+            payDate: "desc",
+          },
+        });
+
+        if (lastReceiptInMonth) {
+          endingDebt = lastReceiptInMonth.remainingDebt;
+        }
 
         return {
           agentId: agent.id,
@@ -219,7 +267,7 @@ export class ReportService {
           beginningDebt: parseFloat(Math.max(0, beginningDebt).toString()),
           issuedDebt: parseFloat(issuedDebt.toString()),
           payment: parseFloat(payment.toString()),
-          endingDebt: parseFloat(agent.debtAmount.toString()),
+          endingDebt: parseFloat(endingDebt.toString()),
         };
       })
     );
