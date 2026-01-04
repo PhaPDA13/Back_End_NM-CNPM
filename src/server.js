@@ -5,6 +5,13 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import agentRoutes from "./routes/agent.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import productRoutes from "./routes/product.routes.js";
+import districtRoutes from "./routes/district.routes.js";
+import agentTypeRoutes from "./routes/agentType.routes.js";
+import unitRoutes from "./routes/unit.routes.js";
+import exportNoteRoutes from "./routes/exportNote.routes.js";
+import receiptRoutes from "./routes/receipt.routes.js";
+import reportRoutes from "./routes/report.routes.js";
 import { corsOptions } from "./config/cors.js";
 import errorHandler from "./middlewares/error.middleware.js";
 import verifyJWT from "./middlewares/auth.middleware.js";
@@ -42,6 +49,13 @@ const startServer = async () => {
   //Verify
   app.use(verifyJWT);
   app.use("/api/agents", agentRoutes);
+  app.use("/api/products", productRoutes);
+  app.use("/api/districts", districtRoutes);
+  app.use("/api/agent-types", agentTypeRoutes);
+  app.use("/api/units", unitRoutes);
+  app.use("/api/export-bills", exportNoteRoutes);
+  app.use("/api/receipts", receiptRoutes);
+  app.use("/api/reports", reportRoutes);
 
   // Error handler
   app.use(errorHandler);

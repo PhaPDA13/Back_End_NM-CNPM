@@ -19,6 +19,8 @@ model User {
   agents        Agent[]
   receipts      Receipt[]
   exportNotes   ExportNote[]
+  products      Product[]
+  units         Unit[]
   refreshTokens RefreshToken[]
 }
 
@@ -53,8 +55,8 @@ model ExportNote {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  agent Agent @relation(fields: [agentId], references: [id])
-  owner User  @relation(fields: [ownerId], references: [id])
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Restrict)
+  owner User  @relation(fields: [ownerId], references: [id], onDelete: Restrict)
 
   details ExportNoteDetail[]
 }
@@ -67,24 +69,25 @@ model ExportNoteDetail {
   price        Decimal  @db.Decimal(15,2)
   amount       Decimal? @db.Decimal(15,2)
 
-  exportNote ExportNote @relation(fields: [exportNoteId], references: [id])
-  product    Product    @relation(fields: [productId], references: [id])
-  unit       Unit       @relation(fields: [unitId], references: [id])
+  exportNote ExportNote @relation(fields: [exportNoteId], references: [id], onDelete: Cascade)
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  unit       Unit       @relation(fields: [unitId], references: [id], onDelete: Restrict)
 
   @@id([exportNoteId, productId, unitId])
 }
 
 model Receipt {
-  id        Int      @id @default(autoincrement())
-  payDate   DateTime @db.Date
-  amount    Decimal  @db.Decimal(15,2)
-  agentId   Int
-  ownerId   Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              Int      @id @default(autoincrement())
+  payDate         DateTime @db.Date
+  amount          Decimal  @db.Decimal(15,2)
+  remainingDebt   Decimal  @default(0) @db.Decimal(15,2)
+  agentId         Int
+  ownerId         Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  agent Agent @relation(fields: [agentId], references: [id])
-  owner User  @relation(fields: [ownerId], references: [id])
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Restrict)
+  owner User  @relation(fields: [ownerId], references: [id], onDelete: Restrict)
 }
 
 model AgentType {
@@ -92,22 +95,35 @@ model AgentType {
   name    String  @unique
   maxDebt Decimal @db.Decimal(15,2)
 
-  agents Agent[]
+  agents    Agent[]
+  products  AgentTypeProduct[]
 }
 
 model Product {
-  id    Int     @id @default(autoincrement())
-  name  String  @unique
-  price Decimal @db.Decimal(15,2)
+  id        Int     @id @default(autoincrement())
+  name      String  @unique
+  price     Decimal @db.Decimal(15,2)
+  ownerId   Int
+  isDeleted Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  details ExportNoteDetail[]
+  owner      User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  details    ExportNoteDetail[]
+  agentTypes AgentTypeProduct[]
+  units      ProductUnit[]
 }
 
 model Unit {
-  id   Int    @id @default(autoincrement())
-  name String @unique
+  id      Int    @id @default(autoincrement())
+  name    String
+  ownerId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  details ExportNoteDetail[]
+  owner    User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  details  ExportNoteDetail[]
+  products ProductUnit[]
 }
 
 model District {
@@ -128,4 +144,24 @@ model RefreshToken {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AgentTypeProduct {
+  agentTypeId Int
+  productId   Int
+
+  agentType AgentType @relation(fields: [agentTypeId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([agentTypeId, productId])
+}
+
+model ProductUnit {
+  productId Int
+  unitId    Int
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  unit    Unit    @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@id([productId, unitId])
 }

@@ -6,6 +6,17 @@ export class AgentService {
   static async create(data, ownerId) {
     const db = prisma(ownerId);
 
+    // Kiểm tra email đã tồn tại chưa
+    const existingAgent = await prisma().agent.findUnique({
+      where: {
+        email: data.email,
+      },
+    });
+
+    if (existingAgent) {
+      throw new ApiError(400, "Email đã được sử dụng bởi đại lý khác");
+    }
+
     const foundDistrict = await prisma().district.findUnique({
       where: {
         id: data.districtId,
@@ -62,11 +73,13 @@ export class AgentService {
         updatedAt: true,
         district: {
           select: {
+            id: true,
             name: true,
           },
         },
         agentType: {
           select: {
+            id: true,
             name: true,
           },
         },
@@ -80,7 +93,69 @@ export class AgentService {
     return agents;
   }
 
-  static async;
+  static async search(query, ownerId) {
+    const db = prisma(ownerId);
+    const where = {
+      AND: [],
+    };
+
+    // Tìm theo tên
+    if (query.name) {
+      where.AND.push({
+        name: {
+          contains: query.name,
+          mode: "insensitive",
+        },
+      });
+    }
+
+    // Tìm theo quận
+    if (query.districtId) {
+      where.AND.push({
+        districtId: parseInt(query.districtId, 10),
+      });
+    }
+
+    // Tìm theo loại đại lý
+    if (query.agentTypeId) {
+      where.AND.push({
+        agentTypeId: parseInt(query.agentTypeId, 10),
+      });
+    }
+
+    // Nếu không có điều kiện nào, trả về rỗng
+    if (where.AND.length === 0) {
+      return [];
+    }
+
+    const agents = await db.agent.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        address: true,
+        email: true,
+        debtAmount: true,
+        createdAt: true,
+        updatedAt: true,
+        district: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        agentType: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return agents;
+  }
 
   static async getById(id, ownerId) {
     const foundAgent = await prisma(ownerId).agent.findUnique({
@@ -161,5 +236,79 @@ export class AgentService {
         isDeleted: true,
       },
     });
+  }
+
+  // GET - Top 5 đại lý theo doanh thu trong tháng
+  static async getTop5ByRevenue(ownerId) {
+    const db = prisma(ownerId);
+
+    // Lấy ngày đầu tháng và cuối tháng
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    // Lấy danh sách đại lý với tổng doanh thu trong tháng
+    const agents = await db.agent.findMany({
+      where: {
+        exportNotes: {
+          some: {
+            issueDate: {
+              gte: firstDayOfMonth,
+              lte: lastDayOfMonth,
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        debtAmount: true,
+        district: {
+          select: {
+            name: true,
+          },
+        },
+        agentType: {
+          select: {
+            name: true,
+          },
+        },
+        exportNotes: {
+          where: {
+            issueDate: {
+              gte: firstDayOfMonth,
+              lte: lastDayOfMonth,
+            },
+          },
+          select: {
+            total: true,
+          },
+        },
+      },
+      orderBy: {
+        exportNotes: {
+          _count: "desc",
+        },
+      },
+      take: 5,
+    });
+
+    // Tính tổng doanh thu cho mỗi đại lý
+    const result = agents.map((agent) => ({
+      id: agent.id,
+      name: agent.name,
+      phone: agent.phone,
+      email: agent.email,
+      debtAmount: agent.debtAmount,
+      district: agent.district.name,
+      agentType: agent.agentType.name,
+      revenue: agent.exportNotes.reduce((sum, note) => sum + note.total, 0),
+      orderCount: agent.exportNotes.length,
+    }));
+
+    // Sắp xếp lại theo doanh thu giảm dần
+    return result.sort((a, b) => b.revenue - a.revenue);
   }
 }
