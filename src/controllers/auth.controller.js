@@ -17,7 +17,7 @@ export const createUser = async (req, res, next) => {
 export const login = async (req, res, next) => {
   try {
     const result = await AuthService.auth(req.body);
-    const { accessToken, refreshToken } = result;
+    const { fullName, accessToken, refreshToken } = result;
 
     if (!result) {
       throw new Error("Internal server error");
@@ -32,6 +32,7 @@ export const login = async (req, res, next) => {
     res.json({
       success: true,
       message: "Logged in successfully",
+      fullName,
       accessToken,
     });
   } catch (err) {

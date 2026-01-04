@@ -5,7 +5,7 @@ export class UnitService {
   // CREATE - Tạo đơn vị tính mới
   static async create(data, ownerId) {
     const db = prisma(ownerId);
-    const foundUnit = await db.unit.findUnique({
+    const foundUnit = await db.unit.findFirst({
       where: {
         name: data.name,
       },

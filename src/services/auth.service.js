@@ -76,7 +76,9 @@ export class AuthService {
       },
     });
 
-    return { accessToken, refreshToken };
+    const fullName = foundUser.fullName
+
+    return { fullName, accessToken, refreshToken };
   }
 
   static async refresh(refreshToken) {
