@@ -113,6 +113,7 @@ export class ProductService {
         name: true,
         price: true,
         units: true,
+        agentTypes:true
       },
     });
 
