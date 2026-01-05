@@ -29,7 +29,8 @@ export const getAllAgentTypes = async (req, res, next) => {
 export const getAgentTypeById = async (req, res, next) => {
   try {
     const typeId = parseInt(req.params.id, 10);
-    const foundType = await AgentTypeService.getById(typeId);
+    const ownerId = req.user.id;
+    const foundType = await AgentTypeService.getById(typeId, ownerId);
     res.json({
       success: true,
       message: "Get agent type by id",
@@ -71,7 +72,8 @@ export const updateAgentTypeProducts = async (req, res, next) => {
   try {
     const typeId = req.params.id;
     const { productIds } = req.body;
-    const updatedType = await AgentTypeService.updateProducts(typeId, productIds);
+    const ownerId = req.user.id;
+    const updatedType = await AgentTypeService.updateProducts(typeId, productIds, ownerId);
     res.json({
       success: true,
       message: "Update agent type products",
@@ -85,7 +87,8 @@ export const updateAgentTypeProducts = async (req, res, next) => {
 export const getAgentTypeProducts = async (req, res, next) => {
   try {
     const typeId = req.params.id;
-    const type = await AgentTypeService.getProducts(typeId);
+    const ownerId = req.user.id;
+    const type = await AgentTypeService.getProducts(typeId, ownerId);
     res.json({
       success: true,
       message: "Get agent type products",

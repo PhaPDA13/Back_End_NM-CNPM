@@ -36,11 +36,17 @@ export class AgentTypeService {
   }
 
   // READ - Lấy loại đại lý theo ID
-  static async getById(id) {
+  static async getById(id, ownerId) {
+    const parsedOwnerId = parseInt(ownerId, 10);
     const type = await prisma().agentType.findUnique({
       where: { id: parseInt(id, 10) },
       include: {
-        agents: true,
+        agents: {
+          where: {
+            ownerId: parsedOwnerId,
+            isDeleted: false,
+          },
+        },
       },
     });
 
@@ -109,8 +115,9 @@ export class AgentTypeService {
   }
 
   // UPDATE - Cập nhật sản phẩm của loại đại lý
-  static async updateProducts(agentTypeId, productIds) {
+  static async updateProducts(agentTypeId, productIds, ownerId) {
     const parsedTypeId = parseInt(agentTypeId, 10);
+    const parsedOwnerId = parseInt(ownerId, 10);
 
     // Kiểm tra loại đại lý có tồn tại
     const foundType = await prisma().agentType.findUnique({
@@ -121,10 +128,11 @@ export class AgentTypeService {
       throw new ApiError(404, "Không tìm thấy loại đại lý");
     }
 
-    // Kiểm tra tất cả sản phẩm có tồn tại và không bị xóa
+    // Kiểm tra tất cả sản phẩm có tồn tại, không bị xóa và thuộc về user hiện tại
     const products = await prisma().product.findMany({
       where: {
         id: { in: productIds },
+        ownerId: parsedOwnerId,
         isDeleted: false,
       },
     });
@@ -133,9 +141,13 @@ export class AgentTypeService {
       throw new ApiError(400, "Một hoặc nhiều sản phẩm không tồn tại hoặc đã bị xóa");
     }
 
-    // Xóa tất cả sản phẩm hiện tại của loại đại lý này
+    // Xóa tất cả sản phẩm của user hiện tại trong loại đại lý này
+    const userProductIds = products.map((p) => p.id);
     await prisma().agentTypeProduct.deleteMany({
-      where: { agentTypeId: parsedTypeId },
+      where: {
+        agentTypeId: parsedTypeId,
+        productId: { in: userProductIds },
+      },
     });
 
     // Thêm các sản phẩm mới
@@ -148,11 +160,16 @@ export class AgentTypeService {
       data: agentTypeProducts,
     });
 
-    // Lấy lại dữ liệu đã cập nhật
+    // Lấy lại dữ liệu đã cập nhật (chỉ products của user hiện tại)
     return await prisma().agentType.findUnique({
       where: { id: parsedTypeId },
       include: {
         products: {
+          where: {
+            product: {
+              ownerId: parsedOwnerId,
+            },
+          },
           include: {
             product: {
               select: {
@@ -168,13 +185,19 @@ export class AgentTypeService {
   }
 
   // READ - Lấy các sản phẩm của loại đại lý
-  static async getProducts(agentTypeId) {
+  static async getProducts(agentTypeId, ownerId) {
     const parsedTypeId = parseInt(agentTypeId, 10);
+    const parsedOwnerId = parseInt(ownerId, 10);
 
     const type = await prisma().agentType.findUnique({
       where: { id: parsedTypeId },
       include: {
         products: {
+          where: {
+            product: {
+              ownerId: parsedOwnerId,
+            },
+          },
           include: {
             product: {
               select: {

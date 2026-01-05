@@ -36,12 +36,21 @@ export class DistrictService {
   }
 
   // READ - Lấy quận theo ID
-  static async getById(id) {
+  static async getById(id, ownerId = null) {
+    const includeAgents = ownerId
+      ? {
+          agents: {
+            where: {
+              ownerId: parseInt(ownerId, 10),
+              isDeleted: false,
+            },
+          },
+        }
+      : {};
+
     const district = await prisma().district.findUnique({
       where: { id: parseInt(id, 10) },
-      include: {
-        agents: true,
-      },
+      include: includeAgents,
     });
 
     if (!district) {

@@ -29,7 +29,8 @@ export const getAllDistricts = async (req, res, next) => {
 export const getDistrictById = async (req, res, next) => {
   try {
     const districtId = parseInt(req.params.id, 10);
-    const foundDistrict = await DistrictService.getById(districtId);
+    const ownerId = req.user.id;
+    const foundDistrict = await DistrictService.getById(districtId, ownerId);
     res.json({
       success: true,
       message: "Get district by id",

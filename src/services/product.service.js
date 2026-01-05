@@ -79,7 +79,7 @@ export class ProductService {
         id: true,
         name: true,
         price: true,
-        units: true
+        units: true,
       },
     });
 
@@ -89,7 +89,7 @@ export class ProductService {
   // READ - Lấy sản phẩm theo ID
   static async getById(id, ownerId) {
     const db = prisma(ownerId);
-    const product = await db.product.findUnique({
+    const product = await db.product.findFirst({
       where: { id: parseInt(id, 10) },
       include: {
         details: true,
@@ -108,7 +108,7 @@ export class ProductService {
     const db = prisma(ownerId);
     const parsedId = parseInt(id, 10);
 
-    const foundProduct = await db.product.findUnique({
+    const foundProduct = await db.product.findFirst({
       where: { id: parsedId },
     });
 
@@ -142,7 +142,7 @@ export class ProductService {
     const db = prisma(ownerId);
     const parsedId = parseInt(id, 10);
 
-    const foundProduct = await db.product.findUnique({
+    const foundProduct = await db.product.findFirst({
       where: { id: parsedId },
     });
 
@@ -164,7 +164,7 @@ export class ProductService {
     const parsedProductId = parseInt(productId, 10);
 
     // Kiểm tra sản phẩm tồn tại
-    const product = await db.product.findUnique({
+    const product = await db.product.findFirst({
       where: { id: parsedProductId },
     });
 
@@ -219,7 +219,7 @@ export class ProductService {
     const db = prisma(ownerId);
     const parsedProductId = parseInt(productId, 10);
 
-    const product = await db.product.findUnique({
+    const product = await db.product.findFirst({
       where: { id: parsedProductId },
     });
 

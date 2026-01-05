@@ -26,10 +26,13 @@ export class ExportNoteService {
         throw new ApiError(400, "Phiếu xuất phải có ít nhất một mặt hàng");
       }
 
-      // Lấy các sản phẩm được phép cho loại đại lý này
+      // Lấy các sản phẩm được phép cho loại đại lý này (chỉ sản phẩm của user hiện tại)
       const allowedProducts = await prisma().agentTypeProduct.findMany({
         where: {
           agentTypeId: agent.agentTypeId,
+          product: {
+            ownerId: ownerId,
+          },
         },
         select: {
           productId: true,
@@ -38,17 +41,17 @@ export class ExportNoteService {
 
       const allowedProductIds = new Set(allowedProducts.map((ap) => ap.productId));
 
-      // Lấy thông tin tất cả sản phẩm và đơn vị tính cần dùng
+      // Lấy thông tin tất cả sản phẩm và đơn vị tính cần dùng (filter theo ownerId)
       const productIds = data.details.map((d) => parseInt(d.productId, 10));
       const unitIds = data.details.map((d) => parseInt(d.unitId, 10));
 
-      const products = await prisma().product.findMany({
+      const products = await prisma(ownerId).product.findMany({
         where: {
           id: { in: productIds },
         },
       });
 
-      const units = await prisma().unit.findMany({
+      const units = await prisma(ownerId).unit.findMany({
         where: {
           id: { in: unitIds },
         },
