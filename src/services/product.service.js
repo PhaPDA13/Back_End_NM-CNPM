@@ -30,6 +30,21 @@ export class ProductService {
       }
     }
 
+    // Nếu có agentTypeIds, kiểm tra tất cả agentType tồn tại
+    if (data.agentTypeIds && Array.isArray(data.agentTypeIds) && data.agentTypeIds.length > 0) {
+      const agentTypes = await db.agentType.findMany({
+        where: {
+          id: {
+            in: data.agentTypeIds,
+          },
+        },
+      });
+
+      if (agentTypes.length !== data.agentTypeIds.length) {
+        throw new ApiError(400, "Một hoặc nhiều loại đại lý không tồn tại");
+      }
+    }
+
     // Sử dụng transaction để đảm bảo tính nhất quán
     return await db.$transaction(async (tx) => {
       const product = await tx.product.create({
@@ -40,6 +55,7 @@ export class ProductService {
       });
 
       // Nếu có unitIds, gắn các unit vào sản phẩm
+      let units = [];
       if (data.unitIds && Array.isArray(data.unitIds) && data.unitIds.length > 0) {
         await tx.productUnit.createMany({
           data: data.unitIds.map((unitId) => ({
@@ -49,7 +65,7 @@ export class ProductService {
         });
 
         // Lấy danh sách unit mới tạo
-        const units = await tx.productUnit.findMany({
+        units = await tx.productUnit.findMany({
           where: {
             productId: product.id,
           },
@@ -57,16 +73,33 @@ export class ProductService {
             unit: true,
           },
         });
+      }
 
-        return {
-          product,
-          units,
-        };
+      // Nếu có agentTypeIds, gắn các agentType vào sản phẩm
+      let agentTypes = [];
+      if (data.agentTypeIds && Array.isArray(data.agentTypeIds) && data.agentTypeIds.length > 0) {
+        await tx.agentTypeProduct.createMany({
+          data: data.agentTypeIds.map((agentTypeId) => ({
+            productId: product.id,
+            agentTypeId: parseInt(agentTypeId, 10),
+          })),
+        });
+
+        // Lấy danh sách agentType mới tạo
+        agentTypes = await tx.agentTypeProduct.findMany({
+          where: {
+            productId: product.id,
+          },
+          include: {
+            agentType: true,
+          },
+        });
       }
 
       return {
         product,
-        units: [],
+        units,
+        agentTypes,
       };
     });
   }
@@ -234,6 +267,62 @@ export class ProductService {
       include: {
         unit: true,
       },
+    });
+  }
+
+  // Cập nhật loại đại lý của sản phẩm (xóa tất cả cũ, thêm các cái mới)
+  static async updateAgentTypes(productId, agentTypeIds, ownerId) {
+    const db = prisma(ownerId);
+    const parsedProductId = parseInt(productId, 10);
+
+    // Kiểm tra sản phẩm tồn tại
+    const product = await db.product.findFirst({
+      where: { id: parsedProductId },
+    });
+
+    if (!product) {
+      throw new ApiError(404, "Không tìm thấy sản phẩm");
+    }
+
+    // Kiểm tra tất cả loại đại lý tồn tại
+    const agentTypes = await db.agentType.findMany({
+      where: {
+        id: {
+          in: agentTypeIds,
+        },
+      },
+    });
+
+    if (agentTypes.length !== agentTypeIds.length) {
+      throw new ApiError(400, "Một hoặc nhiều loại đại lý không tồn tại");
+    }
+
+    // Sử dụng transaction để đảm bảo tính nhất quán
+    return await db.$transaction(async (tx) => {
+      // Xóa tất cả loại đại lý cũ
+      await tx.agentTypeProduct.deleteMany({
+        where: {
+          productId: parsedProductId,
+        },
+      });
+
+      // Thêm các loại đại lý mới
+      await tx.agentTypeProduct.createMany({
+        data: agentTypeIds.map((agentTypeId) => ({
+          productId: parsedProductId,
+          agentTypeId: parseInt(agentTypeId, 10),
+        })),
+      });
+
+      // Lấy danh sách loại đại lý mới
+      return await tx.agentTypeProduct.findMany({
+        where: {
+          productId: parsedProductId,
+        },
+        include: {
+          agentType: true,
+        },
+      });
     });
   }
 }

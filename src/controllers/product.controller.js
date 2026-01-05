@@ -47,7 +47,7 @@ export const updateProduct = async (req, res, next) => {
   try {
     const ownerId = req.user.id;
     const productId = req.params.id;
-    const { name, price, unitIds } = req.body;
+    const { name, price, unitIds, agentTypeIds } = req.body;
 
     // Cập nhật thông tin sản phẩm
     const updatedProduct = await ProductService.update(productId, { name, price }, ownerId);
@@ -58,12 +58,19 @@ export const updateProduct = async (req, res, next) => {
       units = await ProductService.updateUnits(productId, unitIds, ownerId);
     }
 
+    // Nếu có agentTypeIds, cập nhật loại đại lý
+    let agentTypes = null;
+    if (agentTypeIds && Array.isArray(agentTypeIds)) {
+      agentTypes = await ProductService.updateAgentTypes(productId, agentTypeIds, ownerId);
+    }
+
     res.json({
       success: true,
       message: "Update product",
       data: {
         product: updatedProduct,
         units: units,
+        agentTypes: agentTypes,
       },
     });
   } catch (err) {

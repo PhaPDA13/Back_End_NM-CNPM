@@ -481,7 +481,8 @@
   {
     "name": "Sản phẩm A",
     "price": "100000",
-    "unitIds": [1, 2, 3]
+    "unitIds": [1, 2, 3],
+    "agentTypeIds": [1, 2]
   }
   ```
 - **Response (200):**
@@ -515,13 +516,34 @@
             "name": "Hộp"
           }
         }
+      ],
+      "agentTypes": [
+        {
+          "productId": 1,
+          "agentTypeId": 1,
+          "agentType": {
+            "id": 1,
+            "name": "Đại lý loại A",
+            "maxDebt": "100000.00"
+          }
+        },
+        {
+          "productId": 1,
+          "agentTypeId": 2,
+          "agentType": {
+            "id": 2,
+            "name": "Đại lý loại B",
+            "maxDebt": "50000.00"
+          }
+        }
       ]
     }
   }
   ```
 - **Note:**
   - `unitIds` là tùy chọn
-  - Nếu không gửi `unitIds`, sẽ trả về mảng rỗng
+  - `agentTypeIds` là tùy chọn
+  - Nếu không gửi `unitIds` hoặc `agentTypeIds`, sẽ trả về mảng rỗng
 
 ---
 
@@ -580,7 +602,8 @@
   {
     "name": "Sản phẩm A+",
     "price": "110000",
-    "unitIds": [1, 2, 3]
+    "unitIds": [1, 2, 3],
+    "agentTypeIds": [1, 3]
   }
   ```
 - **Response (200):**
@@ -614,6 +637,26 @@
             "name": "Hộp"
           }
         }
+      ],
+      "agentTypes": [
+        {
+          "productId": 1,
+          "agentTypeId": 1,
+          "agentType": {
+            "id": 1,
+            "name": "Đại lý loại A",
+            "maxDebt": "100000.00"
+          }
+        },
+        {
+          "productId": 1,
+          "agentTypeId": 3,
+          "agentType": {
+            "id": 3,
+            "name": "Đại lý loại C",
+            "maxDebt": "75000.00"
+          }
+        }
       ]
     }
   }
@@ -621,6 +664,7 @@
 - **Note:**
   - Nếu không gửi `unitIds`, chỉ cập nhật thông tin sản phẩm
   - Nếu gửi `unitIds`, sẽ xóa tất cả đơn vị tính cũ và thêm vào các đơn vị mới
+  - Nếu gửi `agentTypeIds`, sẽ xóa tất cả loại đại lý cũ và thêm vào các loại đại lý mới
 
 ---
 
