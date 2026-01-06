@@ -194,7 +194,7 @@ export class ReportService {
           },
         });
 
-        const issuedDebt = issueResult._sum.total || 0;
+        let issuedDebt = issueResult._sum.total || 0;
 
         // Thanh toán = tổng tiền thu trong tháng
         const paymentResult = await db.receipt.aggregate({
@@ -210,7 +210,7 @@ export class ReportService {
           },
         });
 
-        const payment = paymentResult._sum.amount || 0;
+        let payment = paymentResult._sum.amount || 0;
 
         // Nợ đầu kỳ = Tổng tất cả phiếu xuất trước tháng - tổng tất cả phiếu thu trước tháng
         let beginningDebt = 0;
@@ -241,27 +241,32 @@ export class ReportService {
         beginningDebt =
           (totalExportBeforeMonth._sum.total || 0) - (totalPaymentBeforeMonth._sum.amount || 0);
 
+        beginningDebt = Number(beginningDebt.toFixed(2));
+        issuedDebt = Number(issuedDebt.toFixed(2));
+        
+        payment = Number(payment.toFixed(2));
+
         // Nợ cuối kỳ = remainingDebt của phiếu thu cuối cùng TRONG tháng này
         let endingDebt = beginningDebt + issuedDebt - payment;
-        const lastReceiptInMonth = await db.receipt.findFirst({
-          where: {
-            agentId: agent.id,
-            payDate: {
-              gte: startDate,
-              lte: endDate,
-            },
-          },
-          select: {
-            remainingDebt: true,
-          },
-          orderBy: {
-            payDate: "desc",
-          },
-        });
+        // const lastReceiptInMonth = await db.receipt.findFirst({
+        //   where: {
+        //     agentId: agent.id,
+        //     payDate: {
+        //       gte: startDate,
+        //       lte: endDate,
+        //     },
+        //   },
+        //   select: {
+        //     remainingDebt: true,
+        //   },
+        //   orderBy: {
+        //     payDate: "desc",
+        //   },
+        // });
 
-        if (lastReceiptInMonth) {
-          endingDebt = lastReceiptInMonth.remainingDebt;
-        }
+        // if (lastReceiptInMonth) {
+        //   endingDebt = lastReceiptInMonth.remainingDebt;
+        // }
 
         return {
           agentId: agent.id,
